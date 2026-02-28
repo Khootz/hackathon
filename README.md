@@ -44,7 +44,7 @@ modules/usage-stats/    Native module for foreground app detection
 | Navigation | Expo Router (file-based) |
 | State | Zustand 5 |
 | Backend | Supabase (Auth, Postgres, Realtime, RLS) |
-| AI — Quiz Generation | AWS Bedrock Converse API — **Amazon Nova 2 Lite** (`amazon.nova-lite-v1:0`) |
+| AI — Quiz Generation | AWS Bedrock Converse API — **Amazon Nova 2 Lite** (`amazon.nova-2- lite-v1:0`) |
 | AI — Suspicious Activity | AWS Bedrock Agent Runtime (with Converse fallback) |
 | Styling | NativeWind (Tailwind CSS) |
 | Crypto | crypto-js (SigV4 signing, Hermes-compatible) |
