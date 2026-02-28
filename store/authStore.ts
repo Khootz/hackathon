@@ -59,8 +59,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    // Clear local state immediately — don't wait for network
     set({ session: null, user: null, role: null });
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {
+      // ignore network errors — local state already cleared above
+    }
   },
 
   initialize: async () => {

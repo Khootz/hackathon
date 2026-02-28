@@ -18,6 +18,7 @@ import { useRouter } from "expo-router";
 import { useAuthStore } from "../../store/authStore";
 import { useAuraStore } from "../../store/auraStore";
 import * as UsageStats from "../../modules/usage-stats";
+import { Colors, Fonts, Radii, Shadows } from "../../constants";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -331,7 +332,7 @@ export default function StudentHome() {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#0f0f23",
+          backgroundColor: Colors.background,
           justifyContent: "center",
           alignItems: "center",
           padding: 32,
@@ -342,7 +343,7 @@ export default function StudentHome() {
           style={{
             fontSize: 22,
             fontWeight: "bold",
-            color: "#fff",
+            color: Colors.text,
             marginTop: 16,
             textAlign: "center",
           }}
@@ -352,7 +353,7 @@ export default function StudentHome() {
         <Text
           style={{
             fontSize: 14,
-            color: "#a0aec0",
+            color: Colors.textSecondary,
             textAlign: "center",
             marginTop: 10,
             lineHeight: 22,
@@ -365,7 +366,7 @@ export default function StudentHome() {
             UsageStats.requestUsageAccess();
           }}
           style={{
-            backgroundColor: "#6C63FF",
+            backgroundColor: Colors.primary,
             padding: 16,
             borderRadius: 12,
             alignItems: "center",
@@ -373,12 +374,12 @@ export default function StudentHome() {
             width: "100%",
           }}
         >
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+          <Text style={{ color: Colors.text, fontSize: 16, fontWeight: "bold" }}>
             Grant Usage Access
           </Text>
         </TouchableOpacity>
         <Text
-          style={{ color: "#4a5568", fontSize: 12, textAlign: "center", marginTop: 12 }}
+          style={{ color: Colors.textLight, fontSize: 12, textAlign: "center", marginTop: 12 }}
         >
           Find AuraMax in the list and toggle it on, then come back.
         </Text>
@@ -391,31 +392,31 @@ export default function StudentHome() {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#0f0f23",
+          backgroundColor: Colors.background,
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color="#6C63FF" />
-        <Text style={{ color: "#a0aec0", marginTop: 12 }}>Loading real usage data...</Text>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={{ color: Colors.textSecondary, marginTop: 12 }}>Loading real usage data...</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0f0f23" }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
       >
         {/* Header */}
-        <Text style={{ fontSize: 26, fontWeight: "bold", color: "#fff" }}>
+        <Text style={{ fontSize: 26, fontWeight: "bold", color: Colors.text }}>
           Hey, {userName}!
         </Text>
-        <Text style={{ fontSize: 14, color: "#a0aec0", marginTop: 2 }}>
+        <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 2 }}>
           {balance > 100
             ? "Your screen time is being tracked automatically."
             : "Aura running low \u2014 time to learn!"}
@@ -424,22 +425,22 @@ export default function StudentHome() {
         {/* Aura Balance */}
         <View
           style={{
-            backgroundColor: "#16213e",
+            backgroundColor: Colors.card,
             borderRadius: 16,
             padding: 20,
             marginTop: 16,
             alignItems: "center",
             borderWidth: 1,
-            borderColor: balance > 100 ? "#2d3748" : "#e94560",
+            borderColor: balance > 100 ? Colors.border : Colors.error,
           }}
         >
-          <Text style={{ fontSize: 13, color: "#a0aec0" }}>Aura Balance</Text>
+          <Text style={{ fontSize: 13, color: Colors.textSecondary }}>Aura Balance</Text>
           <Text
             style={{
               fontSize: 44,
               fontWeight: "bold",
               color:
-                balance > 100 ? "#FFD700" : balance > 0 ? "#FF6B35" : "#e94560",
+                balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error,
               marginTop: 4,
             }}
           >
@@ -447,14 +448,14 @@ export default function StudentHome() {
           </Text>
           <View style={{ flexDirection: "row", gap: 24, marginTop: 6 }}>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ color: "#a0aec0", fontSize: 11 }}>Available</Text>
-              <Text style={{ color: "#00C853", fontWeight: "bold" }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Available</Text>
+              <Text style={{ color: Colors.success, fontWeight: "bold" }}>
                 {Math.round(available)}
               </Text>
             </View>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ color: "#a0aec0", fontSize: 11 }}>Invested</Text>
-              <Text style={{ color: "#6C63FF", fontWeight: "bold" }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Invested</Text>
+              <Text style={{ color: Colors.primary, fontWeight: "bold" }}>
                 {Math.round(invested)}
               </Text>
             </View>
@@ -467,15 +468,15 @@ export default function StudentHome() {
             flexDirection: "row",
             gap: 8,
             marginTop: 10,
-            backgroundColor: "#1a0a2e",
+            backgroundColor: Colors.primaryLight,
             borderRadius: 10,
             padding: 10,
             borderWidth: 1,
-            borderColor: "#6C63FF",
+            borderColor: Colors.primary,
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "#6C63FF", fontSize: 11, fontWeight: "bold", marginRight: 4 }}>
+          <Text style={{ color: Colors.primary, fontSize: 11, fontWeight: "bold", marginRight: 4 }}>
             DEV
           </Text>
           {[
@@ -490,13 +491,13 @@ export default function StudentHome() {
               onPress={async () => { await btn.fn(); await fetchBalance(userId!); }}
               style={{
                 flex: 1,
-                backgroundColor: "#2d1b69",
+                backgroundColor: Colors.cardTeal,
                 borderRadius: 6,
                 paddingVertical: 6,
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>{btn.label}</Text>
+              <Text style={{ color: Colors.text, fontSize: 12, fontWeight: "bold" }}>{btn.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -506,18 +507,18 @@ export default function StudentHome() {
           <View
             style={{
               flex: 1,
-              backgroundColor: "#16213e",
+              backgroundColor: Colors.card,
               borderRadius: 12,
               padding: 14,
               alignItems: "center",
               borderWidth: 1,
-              borderColor: "#2d3748",
+              borderColor: Colors.border,
             }}
           >
-            <Text style={{ color: "#a0aec0", fontSize: 11 }}>Screen Time</Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Screen Time</Text>
             <Text
               style={{
-                color: "#fff",
+                color: Colors.text,
                 fontWeight: "bold",
                 fontSize: 18,
                 marginTop: 2,
@@ -529,18 +530,18 @@ export default function StudentHome() {
           <View
             style={{
               flex: 1,
-              backgroundColor: "#16213e",
+              backgroundColor: Colors.card,
               borderRadius: 12,
               padding: 14,
               alignItems: "center",
               borderWidth: 1,
-              borderColor: "#2d3748",
+              borderColor: Colors.border,
             }}
           >
-            <Text style={{ color: "#a0aec0", fontSize: 11 }}>Aura Drained</Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Aura Drained</Text>
             <Text
               style={{
-                color: "#e94560",
+                color: Colors.error,
                 fontWeight: "bold",
                 fontSize: 18,
                 marginTop: 2,
@@ -552,18 +553,18 @@ export default function StudentHome() {
           <View
             style={{
               flex: 1,
-              backgroundColor: "#16213e",
+              backgroundColor: Colors.card,
               borderRadius: 12,
               padding: 14,
               alignItems: "center",
               borderWidth: 1,
-              borderColor: "#2d3748",
+              borderColor: Colors.border,
             }}
           >
-            <Text style={{ color: "#a0aec0", fontSize: 11 }}>Tracked</Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Tracked</Text>
             <Text
               style={{
-                color: "#6C63FF",
+                color: Colors.primary,
                 fontWeight: "bold",
                 fontSize: 18,
                 marginTop: 2,
@@ -579,12 +580,12 @@ export default function StudentHome() {
           <TouchableOpacity
             onPress={() => UsageStats.requestOverlayPermission()}
             style={{
-              backgroundColor: "#2d1a00",
+              backgroundColor: Colors.warningLight,
               borderRadius: 12,
               padding: 14,
               marginTop: 12,
               borderWidth: 1,
-              borderColor: "#FF6B35",
+              borderColor: Colors.warning,
               flexDirection: "row",
               alignItems: "center",
               gap: 10,
@@ -592,10 +593,10 @@ export default function StudentHome() {
           >
             <Text style={{ fontSize: 20 }}>{"\u26A0\uFE0F"}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: "#FF6B35", fontWeight: "bold", fontSize: 13 }}>
+              <Text style={{ color: Colors.warning, fontWeight: "bold", fontSize: 13 }}>
                 Overlay permission needed
               </Text>
-              <Text style={{ color: "#a0aec0", fontSize: 11, marginTop: 2 }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
                 Tap to allow "Draw over other apps" so locked apps can be blocked.
               </Text>
             </View>
@@ -611,24 +612,24 @@ export default function StudentHome() {
             marginTop: 20,
           }}
         >
-          <Text style={{ fontSize: 17, fontWeight: "bold", color: "#fff" }}>
+          <Text style={{ fontSize: 17, fontWeight: "bold", color: Colors.text }}>
             Tracked Apps
           </Text>
           <TouchableOpacity
             onPress={() => setShowAddModal(true)}
             style={{
-              backgroundColor: "#6C63FF",
+              backgroundColor: Colors.primary,
               paddingHorizontal: 14,
               paddingVertical: 7,
               borderRadius: 8,
             }}
           >
-            <Text style={{ color: "#fff", fontSize: 13, fontWeight: "bold" }}>
+            <Text style={{ color: Colors.text, fontSize: 13, fontWeight: "bold" }}>
               + Add App
             </Text>
           </TouchableOpacity>
         </View>
-        <Text style={{ color: "#718096", fontSize: 12, marginTop: 4, marginBottom: 8 }}>
+        <Text style={{ color: Colors.textSecondary, fontSize: 12, marginTop: 4, marginBottom: 8 }}>
           Real usage is tracked automatically via Android UsageStats.
         </Text>
 
@@ -637,19 +638,19 @@ export default function StudentHome() {
           <TouchableOpacity
             onPress={() => setShowAddModal(true)}
             style={{
-              backgroundColor: "#16213e",
+              backgroundColor: Colors.card,
               borderRadius: 12,
               padding: 28,
               alignItems: "center",
               borderWidth: 1,
-              borderColor: "#2d3748",
+              borderColor: Colors.border,
               borderStyle: "dashed",
             }}
           >
             <Text style={{ fontSize: 36 }}>{"\uD83D\uDCF1"}</Text>
             <Text
               style={{
-                color: "#fff",
+                color: Colors.text,
                 fontWeight: "bold",
                 marginTop: 8,
                 fontSize: 15,
@@ -659,7 +660,7 @@ export default function StudentHome() {
             </Text>
             <Text
               style={{
-                color: "#718096",
+                color: Colors.textSecondary,
                 fontSize: 13,
                 marginTop: 4,
                 textAlign: "center",
@@ -680,14 +681,14 @@ export default function StudentHome() {
               onPress={() => setSettingsApp(app)}
               activeOpacity={0.7}
               style={{
-                backgroundColor: app.isLocked ? "#1a1020" : "#16213e",
+                backgroundColor: app.isLocked ? Colors.errorLight : Colors.card,
                 borderRadius: 12,
                 padding: 14,
                 marginBottom: 8,
                 flexDirection: "row",
                 alignItems: "center",
                 borderWidth: 1,
-                borderColor: app.isLocked ? "#6b21a8" : "#2d3748",
+                borderColor: app.isLocked ? Colors.primary : Colors.border,
               }}
             >
               {/* Icon + Info */}
@@ -697,7 +698,7 @@ export default function StudentHome() {
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    color: app.isLocked ? "#9f7aea" : "#fff",
+                    color: app.isLocked ? Colors.primary : Colors.text,
                     fontSize: 15,
                     fontWeight: "600",
                   }}
@@ -705,11 +706,11 @@ export default function StudentHome() {
                   {app.appName}
                 </Text>
                 {app.isLocked ? (
-                  <Text style={{ color: "#9f7aea", fontSize: 11 }}>
+                  <Text style={{ color: Colors.primary, fontSize: 11 }}>
                     Locked {"\u00B7"} 3x penalty active
                   </Text>
                 ) : (
-                  <Text style={{ color: "#718096", fontSize: 11 }}>
+                  <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>
                     {app.drainRate}x drain
                     {mins > 0 ? ` ${"\u00B7"} ${fmt(mins)} today` : ` ${"\u00B7"} No usage today`}
                   </Text>
@@ -720,7 +721,7 @@ export default function StudentHome() {
               {mins > 0 && (
                 <View
                   style={{
-                    backgroundColor: app.isLocked ? "#4a1d96" : "#0d2818",
+                    backgroundColor: app.isLocked ? Colors.primaryLight : Colors.successLight,
                     paddingHorizontal: 10,
                     paddingVertical: 5,
                     borderRadius: 12,
@@ -728,7 +729,7 @@ export default function StudentHome() {
                 >
                   <Text
                     style={{
-                      color: app.isLocked ? "#c4b5fd" : "#00C853",
+                      color: app.isLocked ? Colors.primary : Colors.success,
                       fontSize: 12,
                       fontWeight: "bold",
                     }}
@@ -745,17 +746,17 @@ export default function StudentHome() {
         {trackedApps.length > 0 && (
           <View
             style={{
-              backgroundColor: "#0d1117",
+              backgroundColor: Colors.card,
               borderRadius: 12,
               padding: 14,
               marginTop: 12,
               borderWidth: 1,
-              borderColor: "#1e293b",
+              borderColor: Colors.borderLight,
             }}
           >
             <Text
               style={{
-                color: "#6C63FF",
+                color: Colors.primary,
                 fontWeight: "bold",
                 fontSize: 13,
                 marginBottom: 4,
@@ -763,7 +764,7 @@ export default function StudentHome() {
             >
               How it works
             </Text>
-            <Text style={{ color: "#4a5568", fontSize: 12, lineHeight: 18 }}>
+            <Text style={{ color: Colors.textLight, fontSize: 12, lineHeight: 18 }}>
               {"\u2022 Usage is tracked automatically by Android\n\u2022 Aura drains based on real screen time\n\u2022 Locked apps trigger a 3x penalty + native block overlay\n\u2022 Pull down to refresh your stats"}
             </Text>
           </View>
@@ -773,7 +774,7 @@ export default function StudentHome() {
         {trackedApps.some((a) => a.isLocked) && hasOverlayPerm && (
           <View
             style={{
-              backgroundColor: "#16213e",
+              backgroundColor: Colors.card,
               borderRadius: 12,
               padding: 14,
               marginTop: 12,
@@ -781,14 +782,14 @@ export default function StudentHome() {
               justifyContent: "space-between",
               alignItems: "center",
               borderWidth: 1,
-              borderColor: lockServiceRunning ? "#00C853" : "#2d3748",
+              borderColor: lockServiceRunning ? Colors.success : Colors.border,
             }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}>
+              <Text style={{ color: Colors.text, fontWeight: "bold", fontSize: 14 }}>
                 {"\uD83D\uDEE1\uFE0F"} App Lock Service
               </Text>
-              <Text style={{ color: "#718096", fontSize: 11, marginTop: 2 }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
                 {lockServiceRunning
                   ? "Running \u2014 locked apps will be blocked"
                   : "Stopped \u2014 tap switch to activate"}
@@ -808,8 +809,8 @@ export default function StudentHome() {
                   setLockServiceRunning(false);
                 }
               }}
-              trackColor={{ false: "#2d3748", true: "#00C853" }}
-              thumbColor="#fff"
+              trackColor={{ false: Colors.border, true: Colors.success }}
+              thumbColor={Colors.card}
             />
           </View>
         )}
@@ -828,7 +829,7 @@ export default function StudentHome() {
         >
           <View
             style={{
-              backgroundColor: "#0f0f23",
+              backgroundColor: Colors.background,
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
               maxHeight: "85%",
@@ -844,17 +845,17 @@ export default function StudentHome() {
                   alignItems: "center",
                 }}
               >
-                <Text style={{ fontSize: 20, fontWeight: "bold", color: "#fff" }}>
+                <Text style={{ fontSize: 20, fontWeight: "bold", color: Colors.text }}>
                   Installed Apps
                 </Text>
                 <TouchableOpacity onPress={() => setShowAddModal(false)}>
-                  <Text style={{ color: "#718096", fontSize: 28, lineHeight: 28 }}>
+                  <Text style={{ color: Colors.textSecondary, fontSize: 28, lineHeight: 28 }}>
                     x
                   </Text>
                 </TouchableOpacity>
               </View>
               <Text
-                style={{ color: "#718096", fontSize: 12, marginTop: 4, marginBottom: 12 }}
+                style={{ color: Colors.textSecondary, fontSize: 12, marginTop: 4, marginBottom: 12 }}
               >
                 These are the real apps on your device. Tap to track.
               </Text>
@@ -877,26 +878,26 @@ export default function StudentHome() {
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      backgroundColor: "#16213e",
+                      backgroundColor: Colors.card,
                       borderRadius: 10,
                       padding: 12,
                       marginBottom: 6,
                       borderWidth: 1,
-                      borderColor: "#2d3748",
+                      borderColor: Colors.border,
                     }}
                   >
                     <Text style={{ fontSize: 22, marginRight: 12 }}>
                       {"\uD83D\uDCF1"}
                     </Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: "#fff", fontSize: 14 }}>
+                      <Text style={{ color: Colors.text, fontSize: 14 }}>
                         {app.appName}
                       </Text>
-                      <Text style={{ color: "#4a5568", fontSize: 10 }}>
+                      <Text style={{ color: Colors.textLight, fontSize: 10 }}>
                         {app.packageName}
                       </Text>
                     </View>
-                    <Text style={{ color: "#6C63FF", fontSize: 22 }}>+</Text>
+                    <Text style={{ color: Colors.primary, fontSize: 22 }}>+</Text>
                   </TouchableOpacity>
                 ))}
 
@@ -905,7 +906,7 @@ export default function StudentHome() {
               ).length === 0 && (
                 <Text
                   style={{
-                    color: "#718096",
+                    color: Colors.textSecondary,
                     textAlign: "center",
                     marginTop: 20,
                   }}
@@ -934,7 +935,7 @@ export default function StudentHome() {
           {settingsApp && (
             <View
               style={{
-                backgroundColor: "#16213e",
+                backgroundColor: Colors.card,
                 borderRadius: 20,
                 padding: 24,
                 width: "100%",
@@ -948,7 +949,7 @@ export default function StudentHome() {
                 style={{
                   fontSize: 20,
                   fontWeight: "bold",
-                  color: "#fff",
+                  color: Colors.text,
                   textAlign: "center",
                   marginTop: 8,
                 }}
@@ -958,7 +959,7 @@ export default function StudentHome() {
               <Text
                 style={{
                   fontSize: 11,
-                  color: "#4a5568",
+                  color: Colors.textLight,
                   textAlign: "center",
                   marginTop: 2,
                 }}
@@ -972,7 +973,7 @@ export default function StudentHome() {
                 return u ? (
                   <View
                     style={{
-                      backgroundColor: "#0d2818",
+                      backgroundColor: Colors.successLight,
                       borderRadius: 10,
                       padding: 12,
                       marginTop: 14,
@@ -980,11 +981,11 @@ export default function StudentHome() {
                     }}
                   >
                     <Text
-                      style={{ color: "#00C853", fontWeight: "bold", fontSize: 18 }}
+                      style={{ color: Colors.success, fontWeight: "bold", fontSize: 18 }}
                     >
                       {fmt(u.totalMinutes)}
                     </Text>
-                    <Text style={{ color: "#718096", fontSize: 11, marginTop: 2 }}>
+                    <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
                       used today
                     </Text>
                   </View>
@@ -994,7 +995,7 @@ export default function StudentHome() {
               {/* Drain rate */}
               <Text
                 style={{
-                  color: "#a0aec0",
+                  color: Colors.textSecondary,
                   fontSize: 13,
                   marginTop: 20,
                   marginBottom: 8,
@@ -1014,13 +1015,13 @@ export default function StudentHome() {
                       paddingVertical: 8,
                       borderRadius: 8,
                       backgroundColor:
-                        settingsApp.drainRate === rate ? "#6C63FF" : "#0f0f23",
+                        settingsApp.drainRate === rate ? Colors.primary : Colors.background,
                       borderWidth: 1,
                       borderColor:
-                        settingsApp.drainRate === rate ? "#6C63FF" : "#2d3748",
+                        settingsApp.drainRate === rate ? Colors.primary : Colors.border,
                     }}
                   >
-                    <Text style={{ color: "#fff", fontSize: 14 }}>{rate}x</Text>
+                    <Text style={{ color: Colors.text, fontSize: 14 }}>{rate}x</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -1032,18 +1033,18 @@ export default function StudentHome() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   marginTop: 20,
-                  backgroundColor: "#0f0f23",
+                  backgroundColor: Colors.background,
                   padding: 14,
                   borderRadius: 10,
                 }}
               >
                 <View>
-                  <Text style={{ color: "#fff", fontWeight: "600" }}>
+                  <Text style={{ color: Colors.text, fontWeight: "600" }}>
                     {settingsApp.isLocked
                       ? "\uD83D\uDD12 Locked"
                       : "\uD83D\uDD13 Unlocked"}
                   </Text>
-                  <Text style={{ color: "#718096", fontSize: 11, marginTop: 2 }}>
+                  <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
                     {settingsApp.isLocked
                       ? "Native overlay blocks this app"
                       : "App is allowed"}
@@ -1054,8 +1055,8 @@ export default function StudentHome() {
                   onValueChange={() =>
                     handleToggleLock(settingsApp.packageName)
                   }
-                  trackColor={{ false: "#2d3748", true: "#6b21a8" }}
-                  thumbColor="#fff"
+                  trackColor={{ false: Colors.border, true: Colors.primary }}
+                  thumbColor={Colors.card}
                 />
               </View>
 
@@ -1063,16 +1064,16 @@ export default function StudentHome() {
               <TouchableOpacity
                 onPress={() => handleRemoveApp(settingsApp.packageName)}
                 style={{
-                  backgroundColor: "#1a0a0a",
+                  backgroundColor: Colors.errorLight,
                   padding: 12,
                   borderRadius: 10,
                   alignItems: "center",
                   marginTop: 16,
                   borderWidth: 1,
-                  borderColor: "#3b1010",
+                  borderColor: Colors.error + "33",
                 }}
               >
-                <Text style={{ color: "#e94560", fontWeight: "bold" }}>
+                <Text style={{ color: Colors.error, fontWeight: "bold" }}>
                   Remove App
                 </Text>
               </TouchableOpacity>
@@ -1082,7 +1083,7 @@ export default function StudentHome() {
                 onPress={() => setSettingsApp(null)}
                 style={{ alignItems: "center", marginTop: 14 }}
               >
-                <Text style={{ color: "#718096" }}>Close</Text>
+                <Text style={{ color: Colors.textSecondary }}>Close</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -1107,7 +1108,7 @@ export default function StudentHome() {
             style={{
               fontSize: 26,
               fontWeight: "bold",
-              color: "#e94560",
+              color: Colors.error,
               marginTop: 16,
               textAlign: "center",
             }}
@@ -1117,7 +1118,7 @@ export default function StudentHome() {
           <Text
             style={{
               fontSize: 15,
-              color: "#a0aec0",
+              color: Colors.textSecondary,
               textAlign: "center",
               marginTop: 10,
               lineHeight: 22,
@@ -1132,7 +1133,7 @@ export default function StudentHome() {
               router.push("/(student)/learning");
             }}
             style={{
-              backgroundColor: "#6C63FF",
+              backgroundColor: Colors.primary,
               padding: 16,
               borderRadius: 12,
               alignItems: "center",
@@ -1140,7 +1141,7 @@ export default function StudentHome() {
               width: "100%",
             }}
           >
-            <Text style={{ color: "#fff", fontSize: 17, fontWeight: "bold" }}>
+            <Text style={{ color: Colors.text, fontSize: 17, fontWeight: "bold" }}>
               Go to Learning Hub
             </Text>
           </TouchableOpacity>
@@ -1148,7 +1149,7 @@ export default function StudentHome() {
             onPress={() => setShowAppLock(false)}
             style={{ marginTop: 14 }}
           >
-            <Text style={{ color: "#718096", fontSize: 14 }}>Dismiss</Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 14 }}>Dismiss</Text>
           </TouchableOpacity>
         </View>
       </Modal>

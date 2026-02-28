@@ -13,7 +13,8 @@
       "backgroundColor": "#1a1a2e"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.auramax.app"
     },
     "android": {
       "package": "com.auramax.app",

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -6,61 +6,107 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  Animated,
 } from "react-native";
+import Svg, { Path, Circle, Line, Polyline } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../../store/authStore";
 import { useFamilyStore } from "../../store/familyStore";
 import { useAlertStore } from "../../store/alertStore";
 import { useScreenTimeStore } from "../../store/screenTimeStore";
 import { supabase } from "../../lib/supabase";
+import { Colors, Fonts, Radii, Shadows } from "../../constants";
+
+// ── Icons ────────────────────────────────────────────────────────────────────
+const LinkIcon = ({ size = 20, color = Colors.textInverse }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const ClockIcon = ({ size = 16, color = Colors.error }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth={1.8} />
+    <Polyline points="12 6 12 12 16 14" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const BookOpenIcon = ({ size = 16, color = Colors.success }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const StarIcon = ({ size = 16, color = Colors.gold }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Polyline points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const AlertTriangleIcon = ({ size = 16, color = Colors.error }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="17" x2="12.01" y2="17" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const PlusIcon = ({ size = 16, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Line x1="12" y1="5" x2="12" y2="19" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="5" y1="12" x2="19" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const LogOutIcon = ({ size = 16, color = Colors.error }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Polyline points="16 17 21 12 16 7" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="21" y1="12" x2="9" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 export default function ParentDashboard() {
   const { user, signOut } = useAuthStore();
-  const { children, inviteCode, fetchLinks, fetchChildren, generateInviteCode } =
-    useFamilyStore();
+  const { children, inviteCode, fetchLinks, fetchChildren, generateInviteCode } = useFamilyStore();
   const { alerts, fetchAlerts } = useAlertStore();
   const { fetchChildActivity } = useScreenTimeStore();
   const router = useRouter();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [childActivities, setChildActivities] = useState<
-    Record<string, { totalMinutes: number; totalDrained: number }>
-  >({});
+  const [childActivities, setChildActivities] = useState<Record<string, { totalMinutes: number; totalDrained: number }>>({});
   const [childModuleCounts, setChildModuleCounts] = useState<Record<string, number>>({});
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(24)).current;
+
   const userId = user?.id;
+  const firstName = (user?.user_metadata?.name ?? "Parent").split(" ")[0];
 
   const loadData = useCallback(async () => {
     if (!userId) return;
     await fetchLinks(userId, "parent");
     await fetchAlerts(userId);
-
-    // Fetch activity data for each child
+    const childList = useFamilyStore.getState().children;
     const activities: Record<string, { totalMinutes: number; totalDrained: number }> = {};
     const moduleCounts: Record<string, number> = {};
-
-    const childList = useFamilyStore.getState().children;
     for (const child of childList) {
       const usage = await fetchChildActivity(child.id);
-      const totalMinutes = usage.reduce((s, u) => s + u.duration_minutes, 0);
-      const totalDrained = usage.reduce((s, u) => s + u.aura_drained, 0);
-      activities[child.id] = { totalMinutes, totalDrained };
-
-      // Fetch completed modules count
-      const { count } = await supabase
-        .from("learning_modules")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", child.id)
-        .eq("completed", true);
+      activities[child.id] = {
+        totalMinutes: usage.reduce((s, u) => s + u.duration_minutes, 0),
+        totalDrained: usage.reduce((s, u) => s + u.aura_drained, 0),
+      };
+      const { count } = await supabase.from("learning_modules").select("*", { count: "exact", head: true }).eq("user_id", child.id).eq("completed", true);
       moduleCounts[child.id] = count ?? 0;
     }
-
     setChildActivities(activities);
     setChildModuleCounts(moduleCounts);
   }, [userId]);
 
   useEffect(() => {
     loadData();
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, tension: 70, friction: 14, useNativeDriver: true }),
+    ]).start();
   }, [loadData]);
 
   const onRefresh = useCallback(async () => {
@@ -73,10 +119,7 @@ export default function ParentDashboard() {
     if (!userId) return;
     try {
       const code = await generateInviteCode(userId);
-      Alert.alert(
-        "Invite Code",
-        `Share this code with your child:\n\n${code}\n\nThey enter it after signing up.`
-      );
+      Alert.alert("Invite Code", `Share this code with your child:\n\n${code}\n\nThey enter it after signing up.`);
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
@@ -92,243 +135,195 @@ export default function ParentDashboard() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: "#0f0f23" }}
-      contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />
-      }
+      style={{ flex: 1, backgroundColor: Colors.background }}
+      contentContainerStyle={{ paddingBottom: 40 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
+      showsVerticalScrollIndicator={false}
     >
-      <Text style={{ fontSize: 28, fontWeight: "bold", color: "#fff" }}>
-        Parent Dashboard 📊
-      </Text>
-      <Text style={{ fontSize: 14, color: "#a0aec0", marginTop: 4 }}>
-        Welcome, {user?.user_metadata?.name ?? "Parent"}
-      </Text>
+      {/* ── Header ── */}
+      <View style={{ backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 32, paddingHorizontal: 24, overflow: "hidden" }}>
+        <View style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: "rgba(255,255,255,0.07)" }} />
+        <Text style={{ fontFamily: Fonts.body, fontSize: 14, color: "rgba(255,255,255,0.6)", letterSpacing: 0.5 }}>
+          Welcome back
+        </Text>
+        <Text style={{ fontFamily: Fonts.heading, fontSize: 28, color: Colors.textInverse, marginTop: 2 }}>
+          {firstName}
+        </Text>
+      </View>
 
-      {/* Link Child CTA */}
-      {children.length === 0 && (
-        <TouchableOpacity
-          onPress={handleGenerateCode}
-          style={{
-            backgroundColor: "#6C63FF",
-            borderRadius: 12,
-            padding: 20,
-            marginTop: 20,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ fontSize: 24 }}>🔗</Text>
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold", marginTop: 8 }}>
-            Link Your Child's Account
-          </Text>
-          <Text style={{ color: "#c4c0ff", fontSize: 13, marginTop: 4 }}>
-            Generate an invite code to connect
-          </Text>
-          {inviteCode && (
-            <View
-              style={{
-                backgroundColor: "#0f0f23",
-                borderRadius: 8,
-                padding: 12,
-                marginTop: 12,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FFD700",
-                  fontSize: 24,
-                  fontWeight: "bold",
-                  letterSpacing: 6,
-                  textAlign: "center",
-                }}
-              >
-                {inviteCode}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      )}
+      <Animated.View style={{ padding: 20, gap: 16, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
-      {/* Children Overview */}
-      {children.map((child) => {
-        const activity = childActivities[child.id];
-        const modules = childModuleCounts[child.id] ?? 0;
-        const aura = child.aura_balance?.balance ?? 0;
-
-        return (
-          <View
-            key={child.id}
-            style={{
-              backgroundColor: "#16213e",
-              borderRadius: 16,
-              padding: 20,
-              marginTop: 16,
-              borderWidth: 1,
-              borderColor: "#2d3748",
-            }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 18 }}>
-              👦 {child.name || "Child"}
-            </Text>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginTop: 16,
-              }}
-            >
-              <View style={{ alignItems: "center" }}>
-                <Text
-                  style={{
-                    color: "#FFD700",
-                    fontSize: 24,
-                    fontWeight: "bold",
-                  }}
-                >
-                  {Math.round(aura)}
-                </Text>
-                <Text style={{ color: "#a0aec0", fontSize: 12 }}>Aura</Text>
-              </View>
-              <View style={{ alignItems: "center" }}>
-                <Text
-                  style={{
-                    color: "#e94560",
-                    fontSize: 24,
-                    fontWeight: "bold",
-                  }}
-                >
-                  {formatTime(activity?.totalMinutes ?? 0)}
-                </Text>
-                <Text style={{ color: "#a0aec0", fontSize: 12 }}>Screen Time</Text>
-              </View>
-              <View style={{ alignItems: "center" }}>
-                <Text
-                  style={{
-                    color: "#00C853",
-                    fontSize: 24,
-                    fontWeight: "bold",
-                  }}
-                >
-                  {modules}
-                </Text>
-                <Text style={{ color: "#a0aec0", fontSize: 12 }}>Modules</Text>
-              </View>
-            </View>
-
-            {/* Aura bar */}
-            <View style={{ marginTop: 12 }}>
-              <View
-                style={{
-                  height: 6,
-                  backgroundColor: "#2d3748",
-                  borderRadius: 3,
-                  overflow: "hidden",
-                }}
-              >
-                <View
-                  style={{
-                    height: 6,
-                    backgroundColor:
-                      aura > 200 ? "#00C853" : aura > 50 ? "#FFD700" : "#e94560",
-                    borderRadius: 3,
-                    width: `${Math.min(100, (aura / 500) * 100)}%`,
-                  }}
-                />
-              </View>
-            </View>
-          </View>
-        );
-      })}
-
-      {/* Recent Alerts */}
-      {recentAlerts.length > 0 && (
-        <>
-          <Text
-            style={{
-              color: "#fff",
-              fontSize: 18,
-              fontWeight: "bold",
-              marginTop: 24,
-            }}
-          >
-            Recent Alerts
-          </Text>
-          {recentAlerts.map((alert) => (
-            <View
-              key={alert.id}
-              style={{
-                backgroundColor: "#16213e",
-                borderRadius: 12,
-                padding: 16,
-                marginTop: 12,
-                borderLeftWidth: 4,
-                borderLeftColor:
-                  alert.severity === "critical" ? "#e94560" : "#FFD700",
-              }}
-            >
-              <Text
-                style={{
-                  color:
-                    alert.severity === "critical" ? "#e94560" : "#FFD700",
-                  fontWeight: "bold",
-                }}
-              >
-                {alert.severity === "critical" ? "🚨 Critical" : "⚠️ Minor"}
-              </Text>
-              <Text
-                style={{ color: "#a0aec0", fontSize: 13, marginTop: 4 }}
-              >
-                {alert.message}
-              </Text>
-              <Text
-                style={{ color: "#4a5568", fontSize: 11, marginTop: 4 }}
-              >
-                {new Date(alert.created_at).toLocaleString()}
-              </Text>
-            </View>
-          ))}
-        </>
-      )}
-
-      {/* Actions */}
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
-        {children.length > 0 && (
+        {/* ── Link Child CTA ── */}
+        {children.length === 0 && (
           <TouchableOpacity
             onPress={handleGenerateCode}
-            style={{
-              flex: 1,
-              backgroundColor: "#16213e",
-              padding: 14,
-              borderRadius: 12,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#2d3748",
-            }}
+            activeOpacity={0.88}
+            style={{ backgroundColor: Colors.accent, borderRadius: Radii.xl, padding: 24, alignItems: "center", ...Shadows.md }}
           >
-            <Text style={{ color: "#6C63FF", fontWeight: "bold" }}>
-              + Add Child
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+              <LinkIcon size={22} />
+            </View>
+            <Text style={{ fontFamily: Fonts.heading, fontSize: 17, color: Colors.textInverse, letterSpacing: 0.5 }}>
+              Link a Child Account
             </Text>
+            <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4, textAlign: "center" }}>
+              Generate an invite code for your child
+            </Text>
+            {inviteCode && (
+              <View style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: Radii.md, paddingVertical: 10, paddingHorizontal: 24, marginTop: 16 }}>
+                <Text style={{ fontFamily: Fonts.mono, fontSize: 26, color: Colors.textInverse, letterSpacing: 8, textAlign: "center" }}>
+                  {inviteCode}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         )}
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert("Sign Out", "Are you sure?", [
+
+        {/* ── Children Cards ── */}
+        {children.map((child) => {
+          const activity = childActivities[child.id];
+          const modules = childModuleCounts[child.id] ?? 0;
+          const aura = child.aura_balance?.balance ?? 0;
+          const auraPercent = Math.min(100, (aura / 500) * 100);
+          const auraColor = aura > 200 ? Colors.success : aura > 50 ? Colors.gold : Colors.error;
+          const initials = (child.name || "?").slice(0, 2).toUpperCase();
+
+          return (
+            <View key={child.id} style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 20, ...Shadows.md }}>
+              {/* Child header */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 }}>
+                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.primaryLight + "40", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontFamily: Fonts.heading, fontSize: 17, color: Colors.primary }}>{initials}</Text>
+                </View>
+                <View>
+                  <Text style={{ fontFamily: Fonts.heading, fontSize: 17, color: Colors.text }}>{child.name || "Child"}</Text>
+                  <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: auraColor, marginTop: 1 }}>
+                    {aura > 200 ? "Thriving" : aura > 50 ? "Growing" : "Needs attention"}
+                  </Text>
+                </View>
+                <View style={{ marginLeft: "auto", alignItems: "flex-end" }}>
+                  <Text style={{ fontFamily: Fonts.heading, fontSize: 24, color: Colors.gold }}>{Math.round(aura)}</Text>
+                  <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight }}>aura</Text>
+                </View>
+              </View>
+
+              {/* Stats row */}
+              <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+                {[
+                  { icon: <ClockIcon />, label: formatTime(activity?.totalMinutes ?? 0), sub: "Screen time" },
+                  { icon: <BookOpenIcon />, label: String(modules), sub: "Modules done" },
+                ].map((stat) => (
+                  <View key={stat.sub} style={{ flex: 1, flexDirection: "row", backgroundColor: Colors.background, borderRadius: Radii.md, padding: 12, alignItems: "center", gap: 8 }}>
+                    {stat.icon}
+                    <View>
+                      <Text style={{ fontFamily: Fonts.heading, fontSize: 15, color: Colors.text }}>{stat.label}</Text>
+                      <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight }}>{stat.sub}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              {/* Aura bar */}
+              <View style={{ height: 6, backgroundColor: Colors.borderLight, borderRadius: 3, overflow: "hidden" }}>
+                <View style={{ height: 6, backgroundColor: auraColor, borderRadius: 3, width: `${auraPercent}%` }} />
+              </View>
+            </View>
+          );
+        })}
+
+        {/* ── Alerts ── */}
+        {recentAlerts.length > 0 && (
+          <View>
+            <Text style={{ fontFamily: Fonts.heading, fontSize: 18, color: Colors.text, marginBottom: 10 }}>
+              Alerts
+            </Text>
+            <View style={{ gap: 8 }}>
+              {recentAlerts.map((alert) => {
+                const isCritical = alert.severity === "critical";
+                return (
+                  <View
+                    key={alert.id}
+                    style={{
+                      backgroundColor: isCritical ? Colors.errorLight : Colors.warningLight,
+                      borderRadius: Radii.md,
+                      padding: 14,
+                      flexDirection: "row",
+                      alignItems: "flex-start",
+                      gap: 12,
+                      borderLeftWidth: 3,
+                      borderLeftColor: isCritical ? Colors.error : Colors.warning,
+                    }}
+                  >
+                    <View style={{ paddingTop: 1 }}>
+                      <AlertTriangleIcon color={isCritical ? Colors.error : Colors.warning} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: isCritical ? Colors.error : Colors.warning, marginBottom: 2 }}>
+                        {isCritical ? "Critical" : "Warning"}
+                      </Text>
+                      <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: Colors.text }}>{alert.message}</Text>
+                      <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight, marginTop: 4 }}>
+                        {new Date(alert.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* ── Actions ── */}
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
+          {children.length > 0 && (
+            <TouchableOpacity
+              onPress={handleGenerateCode}
+              activeOpacity={0.85}
+              style={{
+                flex: 1,
+                backgroundColor: Colors.card,
+                paddingVertical: 14,
+                borderRadius: Radii.md,
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+                gap: 8,
+                borderWidth: 1.5,
+                borderColor: Colors.border,
+                ...Shadows.sm,
+              }}
+            >
+              <PlusIcon />
+              <Text style={{ fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 0.3, color: Colors.primary }}>
+                ADD CHILD
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() => Alert.alert("Sign Out", "Are you sure?", [
               { text: "Cancel", style: "cancel" },
               { text: "Sign Out", style: "destructive", onPress: signOut },
-            ])
-          }
-          style={{
-            flex: 1,
-            backgroundColor: "#e94560",
-            padding: 14,
-            borderRadius: 12,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ color: "#fff", fontWeight: "bold" }}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
+            ])}
+            activeOpacity={0.85}
+            style={{
+              flex: 1,
+              backgroundColor: Colors.errorLight,
+              paddingVertical: 14,
+              borderRadius: Radii.md,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 8,
+              ...Shadows.sm,
+            }}
+          >
+            <LogOutIcon />
+            <Text style={{ fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 0.3, color: Colors.error }}>
+              SIGN OUT
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
     </ScrollView>
   );
 }

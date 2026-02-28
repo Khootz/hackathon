@@ -1,15 +1,15 @@
 import { Tabs } from "expo-router";
 import { Text } from "react-native";
+import { Colors } from "../../constants";
 
 export default function StudentLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: "#0f0f23" },
-        headerTintColor: "#fff",
-        tabBarStyle: { backgroundColor: "#0f0f23", borderTopColor: "#2d3748" },
-        tabBarActiveTintColor: "#6C63FF",
-        tabBarInactiveTintColor: "#a0aec0",
+        headerShown: false,
+        tabBarStyle: { backgroundColor: Colors.card, borderTopColor: Colors.borderLight, borderTopWidth: 1 },
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.textLight,
       }}
     >
       <Tabs.Screen

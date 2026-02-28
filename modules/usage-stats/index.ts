@@ -1,6 +1,22 @@
 import { requireNativeModule } from 'expo-modules-core';
+import { Platform } from 'react-native';
 
-const UsageStatsModule = requireNativeModule('UsageStats');
+// UsageStats is an Android-only native module. On iOS, use no-op stubs.
+const UsageStatsModule = Platform.OS === 'android'
+  ? requireNativeModule('UsageStats')
+  : {
+      isUsageAccessGranted: () => false,
+      requestUsageAccess: () => {},
+      canDrawOverlays: () => false,
+      requestOverlayPermission: () => {},
+      getInstalledApps: async () => [],
+      getTodayUsage: async () => [],
+      getUsageStats: async () => [],
+      getForegroundApp: async () => null,
+      startLockService: () => {},
+      updateLockedApps: () => {},
+      stopLockService: () => {},
+    };
 
 // ── Types ────────────────────────────────────────────────────────────
 
