@@ -145,8 +145,14 @@ create policy "Parents can create links" on public.family_links
 create policy "Users can read own links" on public.family_links
   for select using (parent_id = auth.uid() or child_id = auth.uid());
 
+-- Allow children to accept pending invites (child_id is NULL on unaccepted rows)
+-- and allow parents/children to update their own links
 create policy "Children can accept links" on public.family_links
-  for update using (child_id = auth.uid() or parent_id = auth.uid());
+  for update using (
+    child_id = auth.uid()
+    or parent_id = auth.uid()
+    or (child_id is null and status = 'pending')
+  );
 
 create policy "Anyone can find invite code" on public.family_links
   for select using (true);

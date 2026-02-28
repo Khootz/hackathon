@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
-import { generateQuiz } from "../lib/openrouter";
+import { generateQuiz } from "../lib/bedrock";
 
 export interface QuizQuestion {
   q: string;

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { View, Text, TouchableOpacity, Alert, TextInput, ScrollView, Animated, Switch, Platform, ActivityIndicator } from "react-native";
-import Svg, { Path, Circle, Polyline, Line } from "react-native-svg";
+import Svg, { Path, Circle, Polyline, Line, Rect } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useFamilyStore } from "../../store/familyStore";
 import { useSuspiciousActivityStore, DetectionLog } from "../../store/suspiciousActivityStore";
@@ -52,11 +52,45 @@ const TEST_PRESETS = [
   { label: "Chrome (safe)", pkg: "com.android.chrome", name: "Chrome", expect: "safe" },
 ];
 
-// ── Shield Icon ─────────────────────────────────────────────────────────────
+// ── Extra Icons ─────────────────────────────────────────────────────────────
 
 const ShieldIcon = ({ size = 18, color = Colors.primary }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const TerminalIcon = ({ size = 18, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Polyline points="4 17 10 11 4 5" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="12" y1="19" x2="20" y2="19" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const ZapIcon = ({ size = 14, color = Colors.error }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const AlertTriangleIcon = ({ size = 14, color = Colors.warning }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="17" x2="12.01" y2="17" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const ListIcon = ({ size = 18, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Line x1="8" y1="6" x2="21" y2="6" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="8" y1="12" x2="21" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="8" y1="18" x2="21" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="3" y1="6" x2="3.01" y2="6" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="3" y1="12" x2="3.01" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="3" y1="18" x2="3.01" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const PhoneIcon = ({ size = 14, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke={color} strokeWidth={1.8} />
+    <Line x1="12" y1="18" x2="12.01" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
   </Svg>
 );
 
@@ -67,45 +101,73 @@ function LogEntry({ log }: { log: DetectionLog }) {
   const isError = log.action.includes("[ERROR]") || !!log.error;
   const isFlag = log.action.includes("[ALERT]");
   const isSafe = log.action.includes("[OK]");
+  const isSim = log.action.includes("[SIM]");
+
+  const statusColor = isError ? Colors.error : isFlag ? Colors.error : isSafe ? Colors.success : Colors.primary;
+  const statusBg = isError ? Colors.errorLight : isFlag ? Colors.errorLight : isSafe ? Colors.successLight : Colors.cardTeal;
 
   return (
-    <View style={{ borderTopWidth: 1, borderTopColor: Colors.separator, paddingVertical: 10 }}>
-      <Text style={{ fontFamily: Fonts.mono, fontSize: 10, color: Colors.textLight }}>{time}</Text>
+    <View style={{ borderTopWidth: 1, borderTopColor: Colors.separator, paddingVertical: 12 }}>
+      {/* Header row: timestamp + status indicator */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: statusColor }} />
+          <Text style={{ fontFamily: Fonts.mono, fontSize: 10, color: Colors.textLight }}>{time}</Text>
+          {isSim && (
+            <View style={{ backgroundColor: Colors.primaryLight + "30", paddingHorizontal: 6, paddingVertical: 1, borderRadius: Radii.sm }}>
+              <Text style={{ fontFamily: Fonts.heading, fontSize: 8, color: Colors.primary, letterSpacing: 0.5 }}>SIM</Text>
+            </View>
+          )}
+        </View>
+        {log.tier1Category && (
+          <View style={{ backgroundColor: Colors.warningLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radii.full }}>
+            <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 9, color: Colors.warning }}>{log.tier1Category}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* App info */}
       {log.appName !== "-" && (
-        <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 }}>
-          {log.appName} ({log.packageName})
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+          <PhoneIcon size={11} color={Colors.textSecondary} />
+          <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.text }}>{log.appName}</Text>
+          <Text style={{ fontFamily: Fonts.mono, fontSize: 9, color: Colors.textLight }}>({log.packageName})</Text>
+        </View>
       )}
-      {log.tier1Category && (
-        <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.warning, marginTop: 2 }}>
-          Tier 1: {log.tier1Category}
+
+      {/* Action badge */}
+      <View style={{ backgroundColor: statusBg, borderRadius: Radii.sm, paddingHorizontal: 10, paddingVertical: 6, marginTop: 2 }}>
+        <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: statusColor, lineHeight: 15 }}>
+          {log.action}
         </Text>
-      )}
-      <Text
-        style={{
-          fontFamily: Fonts.headingMedium,
-          fontSize: 12,
-          marginTop: 4,
-          color: isError ? Colors.error : isFlag ? Colors.error : isSafe ? Colors.success : Colors.primary,
-        }}
-      >
-        {log.action}
-      </Text>
+      </View>
+
+      {/* Tier 2 result card */}
       {log.tier2Result && (
-        <View style={{ backgroundColor: Colors.background, borderRadius: Radii.sm, padding: 8, marginTop: 6 }}>
-          <Text style={{ fontFamily: Fonts.mono, fontSize: 10, color: Colors.primary, lineHeight: 15 }}>
-            suspicious: {String(log.tier2Result.suspicious)}{"\n"}
-            confidence: {(log.tier2Result.confidence * 100).toFixed(0)}%{"\n"}
-            severity: {log.tier2Result.severity}{"\n"}
-            action: {log.tier2Result.trigger_action}{"\n"}
-            reasoning: {log.tier2Result.reasoning}
+        <View style={{ backgroundColor: Colors.background, borderRadius: Radii.md, padding: 12, marginTop: 8, borderLeftWidth: 3, borderLeftColor: statusColor }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 6 }}>
+            {[
+              { label: "Suspicious", value: String(log.tier2Result.suspicious), color: log.tier2Result.suspicious ? Colors.error : Colors.success },
+              { label: "Confidence", value: `${(log.tier2Result.confidence * 100).toFixed(0)}%`, color: log.tier2Result.confidence >= 0.65 ? Colors.error : Colors.textSecondary },
+              { label: "Severity", value: log.tier2Result.severity, color: log.tier2Result.severity === "critical" ? Colors.error : Colors.warning },
+            ].map((item) => (
+              <View key={item.label} style={{ alignItems: "center" }}>
+                <Text style={{ fontFamily: Fonts.body, fontSize: 9, color: Colors.textLight, marginBottom: 1 }}>{item.label}</Text>
+                <Text style={{ fontFamily: Fonts.heading, fontSize: 12, color: item.color }}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={{ fontFamily: Fonts.body, fontSize: 10, color: Colors.textSecondary, marginBottom: 2 }}>Action: {log.tier2Result.trigger_action}</Text>
+          <Text style={{ fontFamily: Fonts.body, fontSize: 10, color: Colors.text, lineHeight: 14, fontStyle: "italic" }}>
+            {log.tier2Result.reasoning}
           </Text>
         </View>
       )}
+
       {log.error && (
-        <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.error, marginTop: 4 }}>
-          Error: {log.error}
-        </Text>
+        <View style={{ backgroundColor: Colors.errorLight, borderRadius: Radii.sm, paddingHorizontal: 10, paddingVertical: 6, marginTop: 6 }}>
+          <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.error }}>Error: {log.error}</Text>
+        </View>
       )}
     </View>
   );
@@ -326,21 +388,34 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* Status */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 8 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: isDetecting ? Colors.success : Colors.textLight }} />
-            <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary }}>
-              {isDetecting ? "Detection running" : isEnabled ? "Waiting to start..." : "Detection off"}
-            </Text>
+          {/* Status bar */}
+          <View style={{ backgroundColor: isDetecting ? Colors.successLight : isEnabled ? Colors.warningLight : Colors.background, borderRadius: Radii.md, padding: 12, marginTop: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: isDetecting ? Colors.success : isEnabled ? Colors.warning : Colors.textLight }} />
+              <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: isDetecting ? Colors.success : isEnabled ? Colors.warning : Colors.textSecondary }}>
+                {isDetecting ? "Detection Active" : isEnabled ? "Waiting to Start..." : "Detection Off"}
+              </Text>
+            </View>
+            {lastCheckedApp && (
+              <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight, marginTop: 6, marginLeft: 18 }}>
+                Last checked: {lastCheckedApp}
+              </Text>
+            )}
           </View>
-          {lastCheckedApp && (
-            <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight, marginTop: 4 }}>
-              Last checked: {lastCheckedApp}
-            </Text>
-          )}
-          <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight, marginTop: 2 }}>
-            Flags: {flagCountToday}/{DetectionConfig.MAX_FLAGS_PER_DAY} | Interval: {DetectionConfig.INTERVAL_MS / 1000}s | Cooldown: {DetectionConfig.ALERT_COOLDOWN_MS / 60000}min
-          </Text>
+
+          {/* Stats row */}
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+            {[
+              { label: "Flags Today", value: `${flagCountToday}/${DetectionConfig.MAX_FLAGS_PER_DAY}`, color: flagCountToday > 0 ? Colors.error : Colors.success },
+              { label: "Interval", value: `${DetectionConfig.INTERVAL_MS / 1000}s`, color: Colors.primary },
+              { label: "Cooldown", value: `${DetectionConfig.ALERT_COOLDOWN_MS / 60000}m`, color: Colors.primary },
+            ].map((stat) => (
+              <View key={stat.label} style={{ flex: 1, backgroundColor: Colors.background, borderRadius: Radii.sm, padding: 8, alignItems: "center" }}>
+                <Text style={{ fontFamily: Fonts.body, fontSize: 9, color: Colors.textLight, marginBottom: 2 }}>{stat.label}</Text>
+                <Text style={{ fontFamily: Fonts.heading, fontSize: 14, color: stat.color }}>{stat.value}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* ═══════════════════════════════════════════════════════════════ */}
@@ -349,119 +424,139 @@ export default function SettingsScreen() {
 
         {devMode && (
           <>
-            {/* ── Quick Test Presets ───────────────────────────────────── */}
+            {/* ── Test Detection Pipeline ────────────────────────────── */}
             <View style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 20, ...Shadows.sm }}>
-              <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text, marginBottom: 4 }}>
-                Test Detection Pipeline
-              </Text>
-              <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textLight, marginBottom: 14, lineHeight: 17 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                <TerminalIcon />
+                <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text }}>Test Detection Pipeline</Text>
+              </View>
+              <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textLight, marginBottom: 16, lineHeight: 17 }}>
                 Simulates the full Tier 1 → Tier 2 pipeline. OpenRouter API required for Tier 2.
               </Text>
 
-              <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.textSecondary, letterSpacing: 0.8, marginBottom: 8 }}>
+              {/* Quick Tests */}
+              <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: Colors.textLight, letterSpacing: 1, marginBottom: 10 }}>
                 QUICK TESTS
               </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-                {TEST_PRESETS.map((p) => (
-                  <TouchableOpacity
-                    key={p.pkg}
-                    disabled={simulating}
-                    onPress={() => runSimulation(p.name, p.pkg)}
-                    activeOpacity={0.75}
-                    style={{
-                      backgroundColor: Colors.background,
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: Radii.md,
-                      borderWidth: 1.5,
-                      borderColor: p.expect === "critical" ? Colors.error : p.expect === "minor" ? Colors.warning : Colors.border,
-                      opacity: simulating ? 0.4 : 1,
-                    }}
-                  >
-                    <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.text }}>{p.label}</Text>
-                    <Text style={{ fontFamily: Fonts.body, fontSize: 9, color: Colors.textLight }}>({p.expect})</Text>
-                  </TouchableOpacity>
-                ))}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+                {TEST_PRESETS.map((p) => {
+                  const borderColor = p.expect === "critical" ? Colors.error : p.expect === "minor" ? Colors.warning : Colors.success;
+                  const bgColor = p.expect === "critical" ? Colors.errorLight : p.expect === "minor" ? Colors.warningLight : Colors.successLight;
+                  return (
+                    <TouchableOpacity
+                      key={p.pkg}
+                      disabled={simulating}
+                      onPress={() => runSimulation(p.name, p.pkg)}
+                      activeOpacity={0.75}
+                      style={{
+                        backgroundColor: bgColor,
+                        paddingHorizontal: 14,
+                        paddingVertical: 10,
+                        borderRadius: Radii.md,
+                        borderWidth: 1.5,
+                        borderColor,
+                        opacity: simulating ? 0.4 : 1,
+                        minWidth: 80,
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.text }}>{p.label}</Text>
+                      <View style={{ backgroundColor: borderColor + "20", paddingHorizontal: 6, paddingVertical: 1, borderRadius: Radii.full, marginTop: 3 }}>
+                        <Text style={{ fontFamily: Fonts.heading, fontSize: 9, color: borderColor, textTransform: "uppercase", letterSpacing: 0.5 }}>{p.expect}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
               {simulating && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: Colors.cardTeal, padding: 12, borderRadius: Radii.md, marginBottom: 14 }}>
                   <ActivityIndicator size="small" color={Colors.primary} />
-                  <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.primary }}>Calling LLM...</Text>
+                  <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.primary }}>Analyzing with LLM...</Text>
                 </View>
               )}
 
-              {/* Custom test */}
-              <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.textSecondary, letterSpacing: 0.8, marginBottom: 8 }}>
+              {/* Divider */}
+              <View style={{ height: 1, backgroundColor: Colors.separator, marginBottom: 14 }} />
+
+              {/* Custom Test */}
+              <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: Colors.textLight, letterSpacing: 1, marginBottom: 10 }}>
                 CUSTOM TEST
               </Text>
-              <TextInput
-                placeholder="App name (e.g. MyApp)"
-                placeholderTextColor={Colors.textLight}
-                value={customApp}
-                onChangeText={setCustomApp}
-                style={{
-                  backgroundColor: Colors.background,
-                  color: Colors.text,
-                  padding: 12,
-                  borderRadius: Radii.md,
-                  fontFamily: Fonts.body,
-                  fontSize: 14,
-                  borderWidth: 1,
-                  borderColor: Colors.border,
-                  marginBottom: 8,
-                }}
-              />
-              <TextInput
-                placeholder="Package name (e.g. com.example.app)"
-                placeholderTextColor={Colors.textLight}
-                value={customPkg}
-                onChangeText={setCustomPkg}
-                style={{
-                  backgroundColor: Colors.background,
-                  color: Colors.text,
-                  padding: 12,
-                  borderRadius: Radii.md,
-                  fontFamily: Fonts.body,
-                  fontSize: 14,
-                  borderWidth: 1,
-                  borderColor: Colors.border,
-                  marginBottom: 8,
-                }}
-              />
-              <TouchableOpacity
-                disabled={!customApp || !customPkg || simulating}
-                onPress={() => runSimulation(customApp, customPkg)}
-                activeOpacity={0.85}
-                style={{
-                  backgroundColor: !customApp || !customPkg || simulating ? Colors.borderLight : Colors.accent,
-                  padding: 12,
-                  borderRadius: Radii.md,
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ fontFamily: Fonts.heading, fontSize: 14, color: !customApp || !customPkg || simulating ? Colors.textLight : Colors.textInverse }}>
-                  Run Custom Test
-                </Text>
-              </TouchableOpacity>
-
-              {/* Check live foreground app */}
-              <TouchableOpacity
-                onPress={checkLiveApp}
-                activeOpacity={0.85}
-                style={{
-                  borderWidth: 1.5,
-                  borderColor: Colors.primary,
-                  padding: 10,
-                  borderRadius: Radii.md,
-                  alignItems: "center",
-                  marginTop: 12,
-                }}
-              >
-                <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.primary }}>
-                  Check Current Foreground App
-                </Text>
-              </TouchableOpacity>
+              <View style={{ gap: 8, marginBottom: 12 }}>
+                <TextInput
+                  placeholder="App name (e.g. MyApp)"
+                  placeholderTextColor={Colors.textLight}
+                  value={customApp}
+                  onChangeText={setCustomApp}
+                  style={{
+                    backgroundColor: Colors.background,
+                    color: Colors.text,
+                    padding: 14,
+                    borderRadius: Radii.md,
+                    fontFamily: Fonts.body,
+                    fontSize: 14,
+                    borderWidth: 1.5,
+                    borderColor: customApp ? Colors.primary : Colors.border,
+                  }}
+                />
+                <TextInput
+                  placeholder="Package name (e.g. com.example.app)"
+                  placeholderTextColor={Colors.textLight}
+                  value={customPkg}
+                  onChangeText={setCustomPkg}
+                  style={{
+                    backgroundColor: Colors.background,
+                    color: Colors.text,
+                    padding: 14,
+                    borderRadius: Radii.md,
+                    fontFamily: Fonts.body,
+                    fontSize: 14,
+                    borderWidth: 1.5,
+                    borderColor: customPkg ? Colors.primary : Colors.border,
+                  }}
+                />
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TouchableOpacity
+                  disabled={!customApp || !customPkg || simulating}
+                  onPress={() => runSimulation(customApp, customPkg)}
+                  activeOpacity={0.85}
+                  style={{
+                    flex: 1,
+                    backgroundColor: !customApp || !customPkg || simulating ? Colors.borderLight : Colors.accent,
+                    paddingVertical: 13,
+                    borderRadius: Radii.md,
+                    alignItems: "center",
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <ZapIcon size={13} color={!customApp || !customPkg || simulating ? Colors.textLight : Colors.textInverse} />
+                  <Text style={{ fontFamily: Fonts.heading, fontSize: 13, color: !customApp || !customPkg || simulating ? Colors.textLight : Colors.textInverse }}>
+                    Run Test
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={checkLiveApp}
+                  activeOpacity={0.85}
+                  style={{
+                    flex: 1,
+                    borderWidth: 1.5,
+                    borderColor: Colors.primary,
+                    paddingVertical: 13,
+                    borderRadius: Radii.md,
+                    alignItems: "center",
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <PhoneIcon size={13} color={Colors.primary} />
+                  <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.primary }}>Foreground App</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* ── Pending Alert Preview ───────────────────────────────── */}
@@ -470,67 +565,92 @@ export default function SettingsScreen() {
                 style={{
                   backgroundColor: pendingAlert.severity === "critical" ? Colors.errorLight : Colors.warningLight,
                   borderRadius: Radii.xl,
-                  padding: 16,
+                  padding: 20,
                   borderWidth: 1.5,
                   borderColor: pendingAlert.severity === "critical" ? Colors.error : Colors.warning,
+                  ...Shadows.sm,
                 }}
               >
-                <Text style={{ fontFamily: Fonts.heading, fontSize: 14, color: Colors.text }}>Active Alert Preview</Text>
-                <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text, marginTop: 4 }}>
-                  {pendingAlert.appName}
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: Fonts.heading,
-                    fontSize: 12,
-                    color: pendingAlert.severity === "critical" ? Colors.error : Colors.warning,
-                    textTransform: "uppercase",
-                    marginTop: 4,
-                  }}
-                >
-                  {pendingAlert.severity}
-                </Text>
-                <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
+                {/* Alert header */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  {pendingAlert.severity === "critical" ? (
+                    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.error + "20", alignItems: "center", justifyContent: "center" }}>
+                      <ZapIcon size={16} color={Colors.error} />
+                    </View>
+                  ) : (
+                    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.warning + "20", alignItems: "center", justifyContent: "center" }}>
+                      <AlertTriangleIcon size={16} color={Colors.warning} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: Fonts.heading, fontSize: 14, color: Colors.text }}>Active Alert Preview</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+                      <View style={{ backgroundColor: pendingAlert.severity === "critical" ? Colors.error : Colors.warning, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radii.full }}>
+                        <Text style={{ fontFamily: Fonts.heading, fontSize: 10, color: Colors.textInverse, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                          {pendingAlert.severity}
+                        </Text>
+                      </View>
+                      {pendingAlert.auraDeducted && (
+                        <Text style={{ fontFamily: Fonts.heading, fontSize: 11, color: Colors.error }}>−50 Aura</Text>
+                      )}
+                    </View>
+                  </View>
+                </View>
+
+                {/* App name */}
+                <View style={{ backgroundColor: "rgba(0,0,0,0.04)", borderRadius: Radii.md, padding: 12, marginBottom: 8 }}>
+                  <Text style={{ fontFamily: Fonts.heading, fontSize: 17, color: Colors.text }}>
+                    {pendingAlert.appName}
+                  </Text>
+                </View>
+
+                {/* Reasoning */}
+                <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: 12 }}>
                   {pendingAlert.reasoning}
                 </Text>
-                {pendingAlert.auraDeducted && (
-                  <Text style={{ fontFamily: Fonts.heading, fontSize: 12, color: Colors.error, marginTop: 4 }}>
-                    −50 Aura deducted
-                  </Text>
-                )}
+
                 <TouchableOpacity
                   onPress={dismissPendingAlert}
                   activeOpacity={0.85}
                   style={{
-                    backgroundColor: "rgba(0,0,0,0.08)",
-                    padding: 8,
+                    backgroundColor: "rgba(0,0,0,0.06)",
+                    paddingVertical: 10,
                     borderRadius: Radii.md,
                     alignItems: "center",
-                    marginTop: 10,
                   }}
                 >
-                  <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.textSecondary }}>Dismiss</Text>
+                  <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.textSecondary }}>Dismiss</Text>
                 </TouchableOpacity>
               </View>
             )}
 
             {/* ── Detection Log ───────────────────────────────────────── */}
             <View style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 20, ...Shadows.sm }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text }}>
-                  Detection Log ({detectionLogs.length})
-                </Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <ListIcon />
+                  <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text }}>Detection Log</Text>
+                  <View style={{ backgroundColor: Colors.background, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radii.full }}>
+                    <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: Colors.textSecondary }}>{detectionLogs.length}</Text>
+                  </View>
+                </View>
                 {detectionLogs.length > 0 && (
-                  <TouchableOpacity onPress={clearLogs}>
-                    <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.primary }}>Clear</Text>
+                  <TouchableOpacity onPress={clearLogs} style={{ backgroundColor: Colors.errorLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radii.full }}>
+                    <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.error }}>Clear</Text>
                   </TouchableOpacity>
                 )}
               </View>
 
               {detectionLogs.length === 0 ? (
-                <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textLight, fontStyle: "italic" }}>
-                  No events yet. Enable detection or run a test above.
-                </Text>
+                <View style={{ backgroundColor: Colors.background, borderRadius: Radii.md, padding: 20, alignItems: "center", marginTop: 8 }}>
+                  <ListIcon size={24} color={Colors.textLight} />
+                  <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: Colors.textLight, marginTop: 8 }}>
+                    No events yet
+                  </Text>
+                  <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight, marginTop: 2 }}>
+                    Enable detection or run a test above
+                  </Text>
+                </View>
               ) : (
                 detectionLogs.map((log) => <LogEntry key={log.id} log={log} />)
               )}
@@ -538,38 +658,56 @@ export default function SettingsScreen() {
 
             {/* ── Risk Registry Reference ──────────────────────────────── */}
             <View style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 20, ...Shadows.sm }}>
-              <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text, marginBottom: 8 }}>
-                Risk Registry ({RISK_REGISTRY.length} entries)
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                <ShieldIcon size={18} color={Colors.error} />
+                <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text }}>Risk Registry</Text>
+                <View style={{ backgroundColor: Colors.background, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radii.full, marginLeft: 4 }}>
+                  <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: Colors.textSecondary }}>{RISK_REGISTRY.length} entries</Text>
+                </View>
+              </View>
+              <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textLight, marginBottom: 14, lineHeight: 17 }}>
+                Apps and categories AuraMax monitors. Matches trigger AI analysis.
               </Text>
+
               {RISK_REGISTRY.map((entry, i) => (
                 <View
                   key={i}
                   style={{
                     borderTopWidth: i > 0 ? 1 : 0,
                     borderTopColor: Colors.separator,
-                    paddingVertical: 8,
+                    paddingVertical: 10,
                   }}
                 >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.text }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.text, flex: 1 }}>
                       {entry.category}
                     </Text>
-                    <Text
+                    <View
                       style={{
-                        fontFamily: Fonts.heading,
-                        fontSize: 10,
-                        color: entry.baseSeverity === "critical" ? Colors.error : Colors.warning,
-                        textTransform: "uppercase",
+                        backgroundColor: entry.baseSeverity === "critical" ? Colors.errorLight : Colors.warningLight,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: Radii.full,
                       }}
                     >
-                      {entry.baseSeverity}
-                    </Text>
+                      <Text
+                        style={{
+                          fontFamily: Fonts.heading,
+                          fontSize: 10,
+                          color: entry.baseSeverity === "critical" ? Colors.error : Colors.warning,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        {entry.baseSeverity}
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={{ fontFamily: Fonts.mono, fontSize: 10, color: Colors.textLight, marginTop: 2 }}>
-                    {entry.patterns.join(" | ")}
+                  <Text style={{ fontFamily: Fonts.mono, fontSize: 10, color: Colors.textLight, marginTop: 3 }}>
+                    {entry.patterns.join(" · ")}
                   </Text>
-                  <Text style={{ fontFamily: Fonts.body, fontSize: 10, color: Colors.textSecondary, marginTop: 2 }}>
-                    {entry.description} (min {entry.minMinutes}min)
+                  <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 }}>
+                    {entry.description}{entry.minMinutes > 0 ? ` (triggers after ${entry.minMinutes} min)` : ""}
                   </Text>
                 </View>
               ))}

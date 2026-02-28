@@ -11,8 +11,9 @@ import Svg, { Path, Circle, Line, Polyline, Rect } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useFamilyStore } from "../../store/familyStore";
 import { useScreenTimeStore } from "../../store/screenTimeStore";
+import { useAlertStore } from "../../store/alertStore";
 import { supabase } from "../../lib/supabase";
-import { Colors, Fonts, Radii, Shadows } from "../../constants";
+import { Colors, Fonts, Radii, Shadows, RISK_REGISTRY, DetectionConfig } from "../../constants";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const ClockIcon = ({ size = 14, color = Colors.error }: { size?: number; color?: string }) => (
@@ -40,6 +41,23 @@ const UsersIcon = ({ size = 28, color = Colors.accent }: { size?: number; color?
     <Path d="M16 3.13a4 4 0 0 1 0 7.75" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
   </Svg>
 );
+const ShieldIcon = ({ size = 18, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const AlertTriangleIcon = ({ size = 14, color = Colors.warning }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="17" x2="12.01" y2="17" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const ZapIcon = ({ size = 14, color = Colors.error }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface AppUsageData {
@@ -60,11 +78,13 @@ export default function ActivityMonitor() {
   const user = useAuthStore((s) => s.user);
   const { children, fetchChildren } = useFamilyStore();
   const { fetchChildActivity } = useScreenTimeStore();
+  const { fetchChildAlerts } = useAlertStore();
 
   const [activities, setActivities] = useState<ChildActivityData[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedChild, setSelectedChild] = useState<string | null>(null);
   const [weeklyData, setWeeklyData] = useState<{ date: string; minutes: number }[]>([]);
+  const [childAlerts, setChildAlerts] = useState<{ id: string; severity: string; message: string; app_name: string | null; created_at: string; acknowledged: boolean }[]>([]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -114,6 +134,10 @@ export default function ActivityMonitor() {
     }
     (data ?? []).forEach((row) => { if (dailyMap[row.session_date] !== undefined) dailyMap[row.session_date] += row.duration_minutes; });
     setWeeklyData(Object.entries(dailyMap).map(([date, minutes]) => ({ date: new Date(date).toLocaleDateString("en", { weekday: "short" }), minutes })));
+
+    // Fetch security alerts for the selected child
+    const alerts = await fetchChildAlerts(selectedChild);
+    setChildAlerts(alerts);
   }, [userId, selectedChild, children]);
 
   useEffect(() => {
@@ -266,6 +290,172 @@ export default function ActivityMonitor() {
                 </View>
               )
             )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* ── RECENT SECURITY ALERTS ──────────────────────────────────── */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+
+            {childAlerts.length > 0 && (
+              <View style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 20, ...Shadows.sm }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                  <AlertTriangleIcon size={18} color={Colors.error} />
+                  <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text }}>
+                    Recent Alerts ({childAlerts.length})
+                  </Text>
+                </View>
+
+                {childAlerts.slice(0, 10).map((alert, i) => {
+                  const isCritical = alert.severity === "critical";
+                  const time = new Date(alert.created_at).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  return (
+                    <View
+                      key={alert.id}
+                      style={{
+                        borderTopWidth: i > 0 ? 1 : 0,
+                        borderTopColor: Colors.separator,
+                        paddingVertical: 12,
+                      }}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        {isCritical ? (
+                          <ZapIcon size={12} color={Colors.error} />
+                        ) : (
+                          <AlertTriangleIcon size={12} color={Colors.warning} />
+                        )}
+                        <Text
+                          style={{
+                            fontFamily: Fonts.heading,
+                            fontSize: 12,
+                            color: isCritical ? Colors.error : Colors.warning,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          {alert.severity}
+                        </Text>
+                        {alert.app_name && (
+                          <View style={{ backgroundColor: Colors.background, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radii.sm }}>
+                            <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: Colors.primary }}>{alert.app_name}</Text>
+                          </View>
+                        )}
+                        <Text style={{ fontFamily: Fonts.body, fontSize: 10, color: Colors.textLight, marginLeft: "auto" }}>{time}</Text>
+                      </View>
+                      <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: Colors.text, lineHeight: 18 }}>
+                        {alert.message}
+                      </Text>
+                      {alert.acknowledged && (
+                        <Text style={{ fontFamily: Fonts.body, fontSize: 10, color: Colors.success, marginTop: 4 }}>✓ Acknowledged</Text>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* ── DETECTION CONFIGURATION ─────────────────────────────────── */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+
+            <View style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 20, ...Shadows.sm }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <ShieldIcon />
+                <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text }}>Detection Settings</Text>
+              </View>
+
+              <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textLight, marginBottom: 14, lineHeight: 17 }}>
+                These settings control how AuraMax detects suspicious activity on your child's device.
+              </Text>
+
+              {[
+                { label: "Check Interval", value: `${DetectionConfig.INTERVAL_MS / 1000}s` },
+                { label: "Confidence Threshold", value: `${(DetectionConfig.CONFIDENCE_THRESHOLD * 100).toFixed(0)}%` },
+                { label: "Alert Cooldown", value: `${DetectionConfig.ALERT_COOLDOWN_MS / 60000} min` },
+                { label: "Max Flags / Day", value: String(DetectionConfig.MAX_FLAGS_PER_DAY) },
+                { label: "Same App Skip", value: `${DetectionConfig.SAME_APP_SKIP_MS / 1000}s` },
+              ].map((item, i) => (
+                <View
+                  key={item.label}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    borderTopWidth: i > 0 ? 1 : 0,
+                    borderTopColor: Colors.separator,
+                  }}
+                >
+                  <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary }}>{item.label}</Text>
+                  <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 14, color: Colors.text }}>{item.value}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* ── RISK REGISTRY ───────────────────────────────────────────── */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+
+            <View style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 20, ...Shadows.sm }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                <ShieldIcon size={18} color={Colors.error} />
+                <Text style={{ fontFamily: Fonts.heading, fontSize: 16, color: Colors.text }}>
+                  Risk Registry
+                </Text>
+                <View style={{ backgroundColor: Colors.background, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radii.full, marginLeft: 4 }}>
+                  <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: Colors.textSecondary }}>{RISK_REGISTRY.length} entries</Text>
+                </View>
+              </View>
+              <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textLight, marginBottom: 14, lineHeight: 17 }}>
+                Apps and categories AuraMax monitors. Any matches trigger a detailed AI analysis.
+              </Text>
+
+              {RISK_REGISTRY.map((entry, i) => (
+                <View
+                  key={i}
+                  style={{
+                    borderTopWidth: i > 0 ? 1 : 0,
+                    borderTopColor: Colors.separator,
+                    paddingVertical: 10,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 13, color: Colors.text, flex: 1 }}>
+                      {entry.category}
+                    </Text>
+                    <View
+                      style={{
+                        backgroundColor: entry.baseSeverity === "critical" ? Colors.errorLight : Colors.warningLight,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: Radii.full,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: Fonts.heading,
+                          fontSize: 10,
+                          color: entry.baseSeverity === "critical" ? Colors.error : Colors.warning,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        {entry.baseSeverity}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={{ fontFamily: Fonts.mono, fontSize: 10, color: Colors.textLight, marginTop: 3 }}>
+                    {entry.patterns.join(" · ")}
+                  </Text>
+                  <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 }}>
+                    {entry.description}{entry.minMinutes > 0 ? ` (triggers after ${entry.minMinutes} min)` : ""}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </>
         )}
       </Animated.View>

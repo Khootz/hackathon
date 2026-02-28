@@ -13,7 +13,7 @@
 - [x] Screen time tracker (simulated — tap apps to drain aura)
 - [x] Aura drain logic per app (configurable drain rates)
 - [x] App lock overlay (modal when aura = 0)
-- [x] Learning Hub — AI quiz generation (OpenRouter)
+- [x] Learning Hub — AI quiz generation (AWS Bedrock / Amazon Nova Lite)
 - [x] Quiz taking flow with scoring + explanations
 - [x] Aura reward on module completion (accuracy-based)
 - [x] Aura Dashboard + compound interest simulation
@@ -52,6 +52,9 @@
 - [x] compound_aura() database function
 
 ## Integrations
+- [x] AWS Bedrock Converse API — quiz generation (Amazon Nova Lite)
+- [x] AWS Bedrock Agent Runtime — suspicious activity analysis
+- [x] AWS SigV4 signing (crypto-js, Hermes-compatible)
 - [ ] Google Classroom API (stretch)
 - [ ] ElevenLabs TTS (deferred)
 - [ ] OpenClaw WhatsApp (deferred)

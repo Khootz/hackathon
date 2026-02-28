@@ -66,7 +66,7 @@ const LogOutIcon = ({ size = 16, color = Colors.error }: { size?: number; color?
 
 export default function ParentDashboard() {
   const { user, signOut } = useAuthStore();
-  const { children, inviteCode, fetchLinks, fetchChildren, generateInviteCode } = useFamilyStore();
+  const { children, inviteCode, fetchLinks, fetchChildren, generateInviteCode, subscribeToLinkChanges } = useFamilyStore();
   const { alerts, fetchAlerts } = useAlertStore();
   const { fetchChildActivity } = useScreenTimeStore();
   const router = useRouter();
@@ -107,6 +107,12 @@ export default function ParentDashboard() {
       Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.spring(slideAnim, { toValue: 0, tension: 70, friction: 14, useNativeDriver: true }),
     ]).start();
+
+    // Subscribe to family_links changes so parent sees new children immediately
+    if (userId) {
+      const unsubscribe = subscribeToLinkChanges(userId);
+      return () => unsubscribe();
+    }
   }, [loadData]);
 
   const onRefresh = useCallback(async () => {

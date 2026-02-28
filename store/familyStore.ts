@@ -33,6 +33,7 @@ interface FamilyState {
   fetchLinks: (userId: string, role: string) => Promise<void>;
   fetchChildren: (parentId: string) => Promise<void>;
   getLinkedParent: (childId: string) => Promise<string | null>;
+  subscribeToLinkChanges: (parentId: string) => () => void;
 }
 
 function makeCode(): string {
@@ -91,18 +92,37 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       .maybeSingle();
 
     if (findError || !link) {
+      console.error("[AuraMax] acceptInvite: no matching invite found", findError);
       return false;
     }
 
-    // Accept it
-    const { error } = await supabase
+    console.log("[AuraMax] acceptInvite: found link", link.id, "from parent", link.parent_id);
+
+    // Accept it — use .select() to verify the row was actually updated
+    const { data: updated, error } = await supabase
       .from("family_links")
       .update({ child_id: childId, status: "accepted" })
-      .eq("id", link.id);
+      .eq("id", link.id)
+      .select()
+      .maybeSingle();
 
-    if (error) return false;
+    if (error) {
+      console.error("[AuraMax] acceptInvite: update error", error);
+      return false;
+    }
 
+    // RLS may silently block the update — verify the row came back
+    if (!updated || updated.child_id !== childId) {
+      console.error("[AuraMax] acceptInvite: update was blocked by RLS (0 rows affected)");
+      return false;
+    }
+
+    console.log("[AuraMax] acceptInvite: success, child", childId, "linked to parent", link.parent_id);
     set({ parentId: link.parent_id });
+
+    // Refetch links so child-side state is fully up to date
+    await get().fetchLinks(childId, "student");
+
     return true;
   },
 
@@ -176,5 +196,29 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
       .maybeSingle();
 
     return data?.parent_id ?? null;
+  },
+
+  subscribeToLinkChanges: (parentId: string) => {
+    const channel = supabase
+      .channel(`family-links-${parentId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "family_links",
+          filter: `parent_id=eq.${parentId}`,
+        },
+        () => {
+          // A child accepted an invite — refetch children
+          get().fetchChildren(parentId);
+          get().fetchLinks(parentId, "parent");
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   },
 }));

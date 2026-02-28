@@ -365,7 +365,7 @@ export default function StudentHome() {
     setTrackedApps(apps);
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.trackedApps, JSON.stringify(apps));
-    } catch {}
+    } catch { }
   }, []);
 
   const loadDrainRecord = useCallback(async (): Promise<DrainRecord> => {
@@ -380,7 +380,7 @@ export default function StudentHome() {
   const saveDrainRecord = useCallback(async (record: DrainRecord) => {
     try {
       await AsyncStorage.setItem(todayDrainKey(), JSON.stringify(record));
-    } catch {}
+    } catch { }
   }, []);
 
   // ── Load real native usage & reconcile aura drain ────────────────────────
@@ -488,7 +488,7 @@ export default function StudentHome() {
         try {
           const installed = await UsageStats.getInstalledApps();
           setInstalledApps(installed);
-        } catch {}
+        } catch { }
         await refreshNativeData(apps);
         syncLockService(apps);
       }
@@ -561,7 +561,7 @@ export default function StudentHome() {
       try {
         const installed = await UsageStats.getInstalledApps();
         setInstalledApps(installed);
-      } catch {}
+      } catch { }
       await refreshNativeData(apps);
     }
     if (userId) await fetchBalance(userId);
@@ -685,343 +685,343 @@ export default function StudentHome() {
 
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], padding: 20 }}>
 
-        {/* Aura Balance */}
-        <View
-          style={{
-            backgroundColor: Colors.card,
-            borderRadius: Radii.xxl,
-            marginTop: 4,
-            overflow: "hidden",
-            ...Shadows.md,
-          }}
-        >
-          {/* Header row: title + gear */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 16 }}>
-            <Text style={{ fontSize: 14, fontFamily: Fonts.headingMedium, color: Colors.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
-              Aura Balance
-            </Text>
-            <TouchableOpacity
-              onPress={() => setShowDevPanel(!showDevPanel)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={{ padding: 4, borderRadius: Radii.full, backgroundColor: showDevPanel ? Colors.primaryLight + "40" : "transparent" }}
-            >
-              <GearIcon size={18} color={showDevPanel ? Colors.primary : Colors.textLight} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Aura Orb */}
-          <AuraOrb balance={balance} />
-
-          {/* Balance number */}
-          <View style={{ alignItems: "center", marginTop: -4, marginBottom: 4 }}>
-            <Text
-              style={{
-                fontSize: 56,
-                fontFamily: Fonts.heading,
-                color: balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error,
-                textAlign: "center",
-                textShadowColor: (balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error) + "55",
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 20,
-                letterSpacing: 2,
-              }}
-            >
-              {Math.round(balance)}
-            </Text>
-            <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight, letterSpacing: 2, textTransform: "uppercase", marginTop: -2 }}>points</Text>
-          </View>
-
-          {/* Available / Invested row */}
-          <View style={{ flexDirection: "row", justifyContent: "center", gap: 32, marginTop: 8, paddingBottom: 20 }}>
-            <View style={{ alignItems: "center" }}>
-              <Text style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}>Available</Text>
-              <Text style={{ color: Colors.success, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>
-                {Math.round(available)}
-              </Text>
-            </View>
-            <View style={{ width: 1, backgroundColor: Colors.separator, marginVertical: 2 }} />
-            <View style={{ alignItems: "center" }}>
-              <Text style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}>Invested</Text>
-              <Text style={{ color: Colors.primary, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>
-                {Math.round(invested)}
-              </Text>
-            </View>
-          </View>
-
-          {/* DEV Panel (collapsible) */}
-          {showDevPanel && (
-            <View style={{ borderTopWidth: 1, borderTopColor: Colors.separator, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.backgroundAlt }}>
-              <Text style={{ color: Colors.primary, fontFamily: Fonts.mono, fontSize: 10, marginBottom: 8, letterSpacing: 1 }}>
-                DEV CONTROLS
-              </Text>
-              <View style={{ flexDirection: "row", gap: 6 }}>
-                {[
-                  { label: "+50", fn: () => userId && earnAura(userId, 50, "DEV") },
-                  { label: "+200", fn: () => userId && earnAura(userId, 200, "DEV") },
-                  { label: "-50", fn: () => userId && drainAura(userId, 50, "DEV") },
-                  { label: "Set 10", fn: async () => { if (userId) { const drain = Math.max(0, balance - 10); if (drain > 0) await drainAura(userId, drain, "DEV"); } } },
-                  { label: "Set 0", fn: async () => { if (userId) { if (balance > 0) await drainAura(userId, balance, "DEV"); setShowAppLock(true); } } },
-                ].map((btn) => (
-                  <TouchableOpacity
-                    key={btn.label}
-                    onPress={async () => { await btn.fn(); await fetchBalance(userId!); }}
-                    style={{
-                      flex: 1,
-                      backgroundColor: Colors.card,
-                      borderRadius: Radii.sm,
-                      paddingVertical: 8,
-                      alignItems: "center",
-                      borderWidth: 1,
-                      borderColor: Colors.border,
-                    }}
-                  >
-                    <Text style={{ color: Colors.text, fontFamily: Fonts.headingMedium, fontSize: 12 }}>{btn.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Quick Stats */}
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-          <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
-            <ClockIcon size={16} color={Colors.textSecondary} />
-            <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Screen Time</Text>
-            <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{fmt(totalMinutesToday)}</Text>
-          </View>
-          <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
-            <TrendDownIcon size={16} color={Colors.textSecondary} />
-            <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Aura Drained</Text>
-            <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{Math.round(totalDrainedToday)}</Text>
-          </View>
-          <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
-            <GridIcon size={16} color={Colors.primary} />
-            <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Tracked</Text>
-            <Text style={{ color: Colors.primary, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{trackedApps.length}</Text>
-          </View>
-        </View>
-
-        {/* Overlay permission banner */}
-        {!hasOverlayPerm && trackedApps.some((a) => a.isLocked) && (
-          <TouchableOpacity
-            onPress={() => UsageStats.requestOverlayPermission()}
-            style={{
-              backgroundColor: Colors.warningLight,
-              borderRadius: 12,
-              padding: 14,
-              marginTop: 12,
-              borderWidth: 1,
-              borderColor: Colors.warning,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <AlertTriangleIcon size={20} color={Colors.warning} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: Colors.warning, fontWeight: "bold", fontSize: 13 }}>
-                Overlay permission needed
-              </Text>
-              <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
-                Tap to allow "Draw over other apps" so locked apps can be blocked.
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {/* ── App Tracking Header ──────────────────────────────────────── */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 20,
-          }}
-        >
-          <Text style={{ fontSize: 17, fontFamily: Fonts.heading, color: Colors.text }}>
-            Tracked Apps
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowAddModal(true)}
-            style={{
-              backgroundColor: Colors.primary,
-              paddingHorizontal: 14,
-              paddingVertical: 7,
-              borderRadius: Radii.sm,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <PlusIcon size={14} color={Colors.textInverse} />
-            <Text style={{ color: Colors.textInverse, fontSize: 13, fontFamily: Fonts.heading }}>
-              Add App
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={{ color: Colors.textSecondary, fontSize: 12, marginTop: 4, marginBottom: 8 }}>
-          Real usage is tracked automatically via Android UsageStats.
-        </Text>
-
-        {/* ── Empty state ──────────────────────────────────────────────── */}
-        {trackedApps.length === 0 && (
-          <TouchableOpacity
-            onPress={() => setShowAddModal(true)}
-            style={{
-              backgroundColor: Colors.card,
-              borderRadius: 12,
-              padding: 28,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: Colors.border,
-              borderStyle: "dashed",
-            }}
-          >
-            <SmartphoneIcon size={36} color={Colors.textSecondary} />
-            <Text
-              style={{
-                color: Colors.text,
-                fontFamily: Fonts.heading,
-                marginTop: 8,
-                fontSize: 15,
-              }}
-            >
-              No apps tracked yet
-            </Text>
-            <Text
-              style={{
-                color: Colors.textSecondary,
-                fontSize: 13,
-                marginTop: 4,
-                textAlign: "center",
-              }}
-            >
-              Tap here to pick from your installed apps
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* ── App Cards ────────────────────────────────────────────────── */}
-        {trackedApps.map((app) => {
-          const usage = getUsageForApp(app.packageName);
-          const mins = usage?.totalMinutes ?? 0;
-          return (
-            <TouchableOpacity
-              key={app.packageName}
-              onPress={() => setSettingsApp(app)}
-              activeOpacity={0.7}
-              style={{
-                backgroundColor: app.isLocked ? Colors.errorLight : Colors.card,
-                borderRadius: 12,
-                padding: 14,
-                marginBottom: 8,
-                flexDirection: "row",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: app.isLocked ? Colors.primary : Colors.border,
-              }}
-            >
-              {/* Icon + Info */}
-              <View style={{ marginRight: 12 }}>
-                {app.isLocked
-                  ? <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.errorLight, alignItems: "center", justifyContent: "center" }}><LockIcon size={20} color={Colors.primary} /></View>
-                  : <AppAvatar name={app.appName} size={40} />}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    color: app.isLocked ? Colors.primary : Colors.text,
-                    fontSize: 15,
-                    fontWeight: "600",
-                  }}
-                >
-                  {app.appName}
-                </Text>
-                {app.isLocked ? (
-                  <Text style={{ color: Colors.primary, fontSize: 11 }}>
-                    Locked {"\u00B7"} 3x penalty active
-                  </Text>
-                ) : (
-                  <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>
-                    {app.drainRate}x drain
-                    {mins > 0 ? ` ${"\u00B7"} ${fmt(mins)} today` : ` ${"\u00B7"} No usage today`}
-                  </Text>
-                )}
-              </View>
-
-              {/* Usage badge */}
-              {mins > 0 && (
-                <View
-                  style={{
-                    backgroundColor: app.isLocked ? Colors.primaryLight : Colors.successLight,
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: app.isLocked ? Colors.primary : Colors.success,
-                      fontSize: 12,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {fmt(mins)}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-
-        {/* Lock service toggle */}
-        {trackedApps.some((a) => a.isLocked) && hasOverlayPerm && (
+          {/* Aura Balance */}
           <View
             style={{
               backgroundColor: Colors.card,
-              borderRadius: 12,
-              padding: 14,
-              marginTop: 12,
+              borderRadius: Radii.xxl,
+              marginTop: 4,
+              overflow: "hidden",
+              ...Shadows.md,
+            }}
+          >
+            {/* Header row: title + gear */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 16 }}>
+              <Text style={{ fontSize: 14, fontFamily: Fonts.headingMedium, color: Colors.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
+                Aura Balance
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowDevPanel(!showDevPanel)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{ padding: 4, borderRadius: Radii.full, backgroundColor: showDevPanel ? Colors.primaryLight + "40" : "transparent" }}
+              >
+                <GearIcon size={18} color={showDevPanel ? Colors.primary : Colors.textLight} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Aura Orb */}
+            <AuraOrb balance={balance} />
+
+            {/* Balance number */}
+            <View style={{ alignItems: "center", marginTop: -4, marginBottom: 4 }}>
+              <Text
+                style={{
+                  fontSize: 56,
+                  fontFamily: Fonts.heading,
+                  color: balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error,
+                  textAlign: "center",
+                  textShadowColor: (balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error) + "55",
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 20,
+                  letterSpacing: 2,
+                }}
+              >
+                {Math.round(balance)}
+              </Text>
+              <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight, letterSpacing: 2, textTransform: "uppercase", marginTop: -2 }}>points</Text>
+            </View>
+
+            {/* Available / Invested row */}
+            <View style={{ flexDirection: "row", justifyContent: "center", gap: 32, marginTop: 8, paddingBottom: 20 }}>
+              <View style={{ alignItems: "center" }}>
+                <Text style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}>Available</Text>
+                <Text style={{ color: Colors.success, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>
+                  {Math.round(available)}
+                </Text>
+              </View>
+              <View style={{ width: 1, backgroundColor: Colors.separator, marginVertical: 2 }} />
+              <View style={{ alignItems: "center" }}>
+                <Text style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}>Invested</Text>
+                <Text style={{ color: Colors.primary, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>
+                  {Math.round(invested)}
+                </Text>
+              </View>
+            </View>
+
+            {/* DEV Panel (collapsible) */}
+            {showDevPanel && (
+              <View style={{ borderTopWidth: 1, borderTopColor: Colors.separator, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.backgroundAlt }}>
+                <Text style={{ color: Colors.primary, fontFamily: Fonts.mono, fontSize: 10, marginBottom: 8, letterSpacing: 1 }}>
+                  DEV CONTROLS
+                </Text>
+                <View style={{ flexDirection: "row", gap: 6 }}>
+                  {[
+                    { label: "+50", fn: () => userId && earnAura(userId, 50, "DEV") },
+                    { label: "+200", fn: () => userId && earnAura(userId, 200, "DEV") },
+                    { label: "-50", fn: () => userId && drainAura(userId, 50, "DEV") },
+                    { label: "Set 10", fn: async () => { if (userId) { const drain = Math.max(0, balance - 10); if (drain > 0) await drainAura(userId, drain, "DEV"); } } },
+                    { label: "Set 0", fn: async () => { if (userId) { if (balance > 0) await drainAura(userId, balance, "DEV"); setShowAppLock(true); } } },
+                  ].map((btn) => (
+                    <TouchableOpacity
+                      key={btn.label}
+                      onPress={async () => { await btn.fn(); await fetchBalance(userId!); }}
+                      style={{
+                        flex: 1,
+                        backgroundColor: Colors.card,
+                        borderRadius: Radii.sm,
+                        paddingVertical: 8,
+                        alignItems: "center",
+                        borderWidth: 1,
+                        borderColor: Colors.border,
+                      }}
+                    >
+                      <Text style={{ color: Colors.text, fontFamily: Fonts.headingMedium, fontSize: 12 }}>{btn.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Quick Stats */}
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+            <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
+              <ClockIcon size={16} color={Colors.textSecondary} />
+              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Screen Time</Text>
+              <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{fmt(totalMinutesToday)}</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
+              <TrendDownIcon size={16} color={Colors.textSecondary} />
+              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Aura Drained</Text>
+              <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{Math.round(totalDrainedToday)}</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
+              <GridIcon size={16} color={Colors.primary} />
+              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Tracked</Text>
+              <Text style={{ color: Colors.primary, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{trackedApps.length}</Text>
+            </View>
+          </View>
+
+          {/* Overlay permission banner */}
+          {!hasOverlayPerm && trackedApps.some((a) => a.isLocked) && (
+            <TouchableOpacity
+              onPress={() => UsageStats.requestOverlayPermission()}
+              style={{
+                backgroundColor: Colors.warningLight,
+                borderRadius: 12,
+                padding: 14,
+                marginTop: 12,
+                borderWidth: 1,
+                borderColor: Colors.warning,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <AlertTriangleIcon size={20} color={Colors.warning} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: Colors.warning, fontWeight: "bold", fontSize: 13 }}>
+                  Overlay permission needed
+                </Text>
+                <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
+                  Tap to allow "Draw over other apps" so locked apps can be blocked.
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* ── App Tracking Header ──────────────────────────────────────── */}
+          <View
+            style={{
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              borderWidth: 1,
-              borderColor: lockServiceRunning ? Colors.success : Colors.border,
+              marginTop: 20,
             }}
           >
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <ShieldIcon size={16} color={Colors.primary} />
-                <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 14 }}>
-                  App Lock Service
+            <Text style={{ fontSize: 17, fontFamily: Fonts.heading, color: Colors.text }}>
+              Tracked Apps
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowAddModal(true)}
+              style={{
+                backgroundColor: Colors.primary,
+                paddingHorizontal: 14,
+                paddingVertical: 7,
+                borderRadius: Radii.sm,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <PlusIcon size={14} color={Colors.textInverse} />
+              <Text style={{ color: Colors.textInverse, fontSize: 13, fontFamily: Fonts.heading }}>
+                Add App
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={{ color: Colors.textSecondary, fontSize: 12, marginTop: 4, marginBottom: 8 }}>
+            Real usage is tracked automatically via Android UsageStats.
+          </Text>
+
+          {/* ── Empty state ──────────────────────────────────────────────── */}
+          {trackedApps.length === 0 && (
+            <TouchableOpacity
+              onPress={() => setShowAddModal(true)}
+              style={{
+                backgroundColor: Colors.card,
+                borderRadius: 12,
+                padding: 28,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: Colors.border,
+                borderStyle: "dashed",
+              }}
+            >
+              <SmartphoneIcon size={36} color={Colors.textSecondary} />
+              <Text
+                style={{
+                  color: Colors.text,
+                  fontFamily: Fonts.heading,
+                  marginTop: 8,
+                  fontSize: 15,
+                }}
+              >
+                No apps tracked yet
+              </Text>
+              <Text
+                style={{
+                  color: Colors.textSecondary,
+                  fontSize: 13,
+                  marginTop: 4,
+                  textAlign: "center",
+                }}
+              >
+                Tap here to pick from your installed apps
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* ── App Cards ────────────────────────────────────────────────── */}
+          {trackedApps.map((app) => {
+            const usage = getUsageForApp(app.packageName);
+            const mins = usage?.totalMinutes ?? 0;
+            return (
+              <TouchableOpacity
+                key={app.packageName}
+                onPress={() => setSettingsApp(app)}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: app.isLocked ? Colors.errorLight : Colors.card,
+                  borderRadius: 12,
+                  padding: 14,
+                  marginBottom: 8,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: app.isLocked ? Colors.primary : Colors.border,
+                }}
+              >
+                {/* Icon + Info */}
+                <View style={{ marginRight: 12 }}>
+                  {app.isLocked
+                    ? <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.errorLight, alignItems: "center", justifyContent: "center" }}><LockIcon size={20} color={Colors.primary} /></View>
+                    : <AppAvatar name={app.appName} size={40} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: app.isLocked ? Colors.primary : Colors.text,
+                      fontSize: 15,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {app.appName}
+                  </Text>
+                  {app.isLocked ? (
+                    <Text style={{ color: Colors.primary, fontSize: 11 }}>
+                      Locked {"\u00B7"} 3x penalty active
+                    </Text>
+                  ) : (
+                    <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>
+                      {app.drainRate}x drain
+                      {mins > 0 ? ` ${"\u00B7"} ${fmt(mins)} today` : ` ${"\u00B7"} No usage today`}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Usage badge */}
+                {mins > 0 && (
+                  <View
+                    style={{
+                      backgroundColor: app.isLocked ? Colors.primaryLight : Colors.successLight,
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: app.isLocked ? Colors.primary : Colors.success,
+                        fontSize: 12,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {fmt(mins)}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Lock service toggle */}
+          {trackedApps.some((a) => a.isLocked) && hasOverlayPerm && (
+            <View
+              style={{
+                backgroundColor: Colors.card,
+                borderRadius: 12,
+                padding: 14,
+                marginTop: 12,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: lockServiceRunning ? Colors.success : Colors.border,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <ShieldIcon size={16} color={Colors.primary} />
+                  <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 14 }}>
+                    App Lock Service
+                  </Text>
+                </View>
+                <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 2 }}>
+                  {lockServiceRunning
+                    ? "Running \u2014 locked apps will be blocked"
+                    : "Stopped \u2014 tap switch to activate"}
                 </Text>
               </View>
-              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 2 }}>
-                {lockServiceRunning
-                  ? "Running \u2014 locked apps will be blocked"
-                  : "Stopped \u2014 tap switch to activate"}
-              </Text>
+              <Switch
+                value={lockServiceRunning}
+                onValueChange={(val) => {
+                  if (val) {
+                    const lockedPkgs = trackedApps
+                      .filter((a) => a.isLocked)
+                      .map((a) => a.packageName);
+                    UsageStats.startLockService(lockedPkgs);
+                    setLockServiceRunning(true);
+                  } else {
+                    UsageStats.stopLockService();
+                    setLockServiceRunning(false);
+                  }
+                }}
+                trackColor={{ false: Colors.border, true: Colors.success }}
+                thumbColor={Colors.card}
+              />
             </View>
-            <Switch
-              value={lockServiceRunning}
-              onValueChange={(val) => {
-                if (val) {
-                  const lockedPkgs = trackedApps
-                    .filter((a) => a.isLocked)
-                    .map((a) => a.packageName);
-                  UsageStats.startLockService(lockedPkgs);
-                  setLockServiceRunning(true);
-                } else {
-                  UsageStats.stopLockService();
-                  setLockServiceRunning(false);
-                }
-              }}
-              trackColor={{ false: Colors.border, true: Colors.success }}
-              thumbColor={Colors.card}
-            />
-          </View>
-        )}
+          )}
         </Animated.View>
       </ScrollView>
 
@@ -1111,16 +1111,16 @@ export default function StudentHome() {
               {installedApps.filter(
                 (a) => !trackedApps.some((t) => t.packageName === a.packageName)
               ).length === 0 && (
-                <Text
-                  style={{
-                    color: Colors.textSecondary,
-                    textAlign: "center",
-                    marginTop: 20,
-                  }}
-                >
-                  All apps already tracked!
-                </Text>
-              )}
+                  <Text
+                    style={{
+                      color: Colors.textSecondary,
+                      textAlign: "center",
+                      marginTop: 20,
+                    }}
+                  >
+                    All apps already tracked!
+                  </Text>
+                )}
             </ScrollView>
           </View>
         </View>

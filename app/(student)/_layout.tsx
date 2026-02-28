@@ -19,7 +19,7 @@ function PermissionBanners() {
     try {
       setUsageGranted(UsageStats.isUsageAccessGranted());
       setOverlayGranted(UsageStats.canDrawOverlays());
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => {
