@@ -1,0 +1,62 @@
+-- Merging decision tree log ---
+manifest
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:1:1-31:12
+INJECTED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:1:1-31:12
+	package
+		INJECTED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml
+	xmlns:tools
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:2:5-51
+	xmlns:android
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:1:11-69
+uses-permission#android.permission.PACKAGE_USAGE_STATS
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:5:5-6:46
+	tools:ignore
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:6:9-44
+	android:name
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:5:22-75
+uses-permission#android.permission.QUERY_ALL_PACKAGES
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:9:5-10:52
+	tools:ignore
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:10:9-50
+	android:name
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:9:22-74
+uses-permission#android.permission.SYSTEM_ALERT_WINDOW
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:13:5-77
+	android:name
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:13:22-75
+uses-permission#android.permission.FOREGROUND_SERVICE
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:16:5-76
+	android:name
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:16:22-74
+uses-permission#android.permission.FOREGROUND_SERVICE_SPECIAL_USE
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:17:5-88
+	android:name
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:17:22-86
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:18:5-76
+	android:name
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:18:22-74
+application
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:20:5-29:19
+service#expo.modules.usagestats.AppLockService
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:21:9-28:19
+	android:exported
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:24:13-37
+	android:foregroundServiceType
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:23:13-55
+	android:name
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:22:13-66
+property#android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE
+ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:25:13-27:109
+	android:value
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:27:17-107
+	android:name
+		ADDED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:26:17-76
+uses-sdk
+INJECTED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml
+INJECTED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml

@@ -1,0 +1,59 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    xmlns:tools="http://schemas.android.com/tools"
+4    package="expo.modules.usagestats" >
+5
+6    <uses-sdk android:minSdkVersion="24" />
+7
+8    <!-- Read app usage statistics -->
+9    <uses-permission
+9-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:5:5-6:46
+10        android:name="android.permission.PACKAGE_USAGE_STATS"
+10-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:5:22-75
+11        tools:ignore="ProtectedPermissions" />
+11-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:6:9-44
+12
+13    <!-- List all installed apps (Android 11+) -->
+14    <uses-permission
+14-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:9:5-10:52
+15        android:name="android.permission.QUERY_ALL_PACKAGES"
+15-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:9:22-74
+16        tools:ignore="QueryAllPackagesPermission" />
+16-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:10:9-50
+17
+18    <!-- Draw overlay on top of other apps (for lock screen) -->
+19    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+19-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:13:5-77
+19-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:13:22-75
+20
+21    <!-- Foreground service for continuous monitoring -->
+22    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+22-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:16:5-76
+22-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:16:22-74
+23    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+23-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:17:5-88
+23-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:17:22-86
+24    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+24-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:18:5-76
+24-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:18:22-74
+25
+26    <application>
+26-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:20:5-29:19
+27        <service
+27-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:21:9-28:19
+28            android:name="expo.modules.usagestats.AppLockService"
+28-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:22:13-66
+29            android:exported="false"
+29-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:24:13-37
+30            android:foregroundServiceType="specialUse" >
+30-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:23:13-55
+31            <property
+31-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:25:13-27:109
+32                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+32-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:26:17-76
+33                android:value="Parental control: monitors foreground app to enforce app lock restrictions" />
+33-->C:\Users\User\Desktop\Hack\AuraMax\modules\usage-stats\android\src\main\AndroidManifest.xml:27:17-107
+34        </service>
+35    </application>
+36
+37</manifest>
