@@ -137,58 +137,59 @@ const GearIcon = ({ size = 20, color = Colors.textSecondary }: { size?: number; 
 // ── Animated Aura Orb ────────────────────────────────────────────────────────
 
 const AuraOrb = ({ balance }: { balance: number }) => {
-  const spinAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0.3)).current;
+  const shineX = useRef(new Animated.Value(0)).current;
+  const shineY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Continuous Y-axis rotation (perspective simulates 3D Z feel)
-    Animated.loop(
-      Animated.timing(spinAnim, {
-        toValue: 1,
-        duration: 6000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-
-    // Subtle pulse
+    // Gentle breathing
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.06, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.04, duration: 2200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 2200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ])
     ).start();
 
     // Glow pulse
     Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim, { toValue: 0.7, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(glowAnim, { toValue: 0.3, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 0.65, duration: 2800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 0.25, duration: 2800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+
+    // Floating shine highlight X
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shineX, { toValue: 8, duration: 3500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(shineX, { toValue: -8, duration: 3500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+
+    // Floating shine highlight Y
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shineY, { toValue: -6, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(shineY, { toValue: 6, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
-  // Map balance to color scheme
   const orbCore = balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error;
   const orbGlow = balance > 100 ? "#D4A449" : balance > 0 ? "#F4A261" : "#E06C75";
   const orbOuter = balance > 100 ? "#FBF1DC" : balance > 0 ? "#FEF3E8" : "#FCEEEF";
 
-  const rotateY = spinAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
-
   return (
-    <View style={{ alignItems: "center", marginVertical: 8 }}>
-      {/* Outer glow ring */}
-      <Animated.View style={{ opacity: glowAnim, position: "absolute", width: 140, height: 140, borderRadius: 70, backgroundColor: orbGlow + "15" }} />
-      <Animated.View style={{ opacity: glowAnim, position: "absolute", width: 120, height: 120, borderRadius: 60, backgroundColor: orbGlow + "20" }} />
+    <View style={{ alignItems: "center", marginVertical: 8, height: 140, justifyContent: "center" }}>
+      {/* Outer glow rings */}
+      <Animated.View style={{ opacity: glowAnim, position: "absolute", width: 140, height: 140, borderRadius: 70, backgroundColor: orbGlow + "12" }} />
+      <Animated.View style={{ opacity: glowAnim, position: "absolute", width: 120, height: 120, borderRadius: 60, backgroundColor: orbGlow + "18" }} />
 
-      {/* Rotating orb */}
+      {/* Sphere with breathing */}
       <Animated.View
         style={{
-          transform: [{ perspective: 800 }, { rotateY }, { scale: pulseAnim }],
+          transform: [{ scale: pulseAnim }],
           width: 100,
           height: 100,
           borderRadius: 50,
@@ -196,48 +197,88 @@ const AuraOrb = ({ balance }: { balance: number }) => {
           justifyContent: "center",
           shadowColor: orbGlow,
           shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.6,
-          shadowRadius: 20,
+          shadowOpacity: 0.5,
+          shadowRadius: 24,
           elevation: 12,
         }}
       >
         <Svg width={100} height={100} viewBox="0 0 100 100">
           <Defs>
-            <RadialGradient id="orbGrad" cx="40%" cy="35%" rx="50%" ry="50%">
-              <Stop offset="0%" stopColor={"#FFFFFF"} stopOpacity={0.9} />
-              <Stop offset="25%" stopColor={orbOuter} stopOpacity={0.8} />
-              <Stop offset="60%" stopColor={orbCore} stopOpacity={0.9} />
+            <RadialGradient id="orbBg" cx="50%" cy="50%" rx="50%" ry="50%">
+              <Stop offset="0%" stopColor={orbOuter} stopOpacity={0.6} />
+              <Stop offset="50%" stopColor={orbCore} stopOpacity={0.85} />
               <Stop offset="100%" stopColor={orbGlow} stopOpacity={1} />
             </RadialGradient>
-            <RadialGradient id="orbShine" cx="35%" cy="30%" rx="30%" ry="30%">
-              <Stop offset="0%" stopColor={"#FFFFFF"} stopOpacity={0.8} />
-              <Stop offset="100%" stopColor={"#FFFFFF"} stopOpacity={0} />
+            <RadialGradient id="orbShine" cx="38%" cy="32%" rx="32%" ry="28%">
+              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.85} />
+              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
+            </RadialGradient>
+            <RadialGradient id="orbDepth" cx="55%" cy="65%" rx="40%" ry="35%">
+              <Stop offset="0%" stopColor={orbGlow} stopOpacity={0.5} />
+              <Stop offset="100%" stopColor={orbGlow} stopOpacity={0} />
             </RadialGradient>
             <LinearGradient id="orbRim" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor={"#FFFFFF"} stopOpacity={0.5} />
-              <Stop offset="50%" stopColor={orbCore} stopOpacity={0.3} />
-              <Stop offset="100%" stopColor={orbGlow} stopOpacity={0.6} />
+              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.45} />
+              <Stop offset="50%" stopColor={orbCore} stopOpacity={0.15} />
+              <Stop offset="100%" stopColor={orbGlow} stopOpacity={0.4} />
             </LinearGradient>
           </Defs>
-          {/* Main orb sphere */}
-          <Circle cx="50" cy="50" r="46" fill="url(#orbGrad)" />
-          {/* Rim highlight */}
-          <Circle cx="50" cy="50" r="46" fill="none" stroke="url(#orbRim)" strokeWidth={1.5} />
-          {/* Shine highlight */}
-          <Ellipse cx="38" cy="35" rx="18" ry="14" fill="url(#orbShine)" />
-          {/* Inner aura shield icon */}
+          {/* Base sphere */}
+          <Circle cx="50" cy="50" r="46" fill="url(#orbBg)" />
+          {/* Depth shadow */}
+          <Ellipse cx="55" cy="62" rx="30" ry="24" fill="url(#orbDepth)" />
+          {/* Rim */}
+          <Circle cx="50" cy="50" r="46" fill="none" stroke="url(#orbRim)" strokeWidth={1.2} />
+          {/* Shield emblem */}
           <Path
-            d="M50 28c0 0 16 8 16 20s-16 20-16 20-16-8-16-20 16-20 16-20z"
+            d="M50 30c0 0 14 7 14 17s-14 17-14 17-14-7-14-17 14-17 14-17z"
             fill="none"
-            stroke={"#FFFFFF"}
-            strokeWidth={1.5}
+            stroke="#FFFFFF"
+            strokeWidth={1.3}
             strokeLinejoin="round"
-            opacity={0.6}
+            opacity={0.5}
           />
-          {/* Center dot */}
-          <Circle cx="50" cy="50" r="3" fill={"#FFFFFF"} opacity={0.7} />
+          <Circle cx="50" cy="49" r="2.5" fill="#FFFFFF" opacity={0.6} />
         </Svg>
+
+        {/* Animated floating highlight */}
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 12,
+            width: 44,
+            height: 32,
+            borderRadius: 20,
+            backgroundColor: "#FFFFFF",
+            opacity: 0.18,
+            transform: [{ translateX: shineX }, { translateY: shineY }],
+          }}
+        />
       </Animated.View>
+    </View>
+  );
+};
+
+// ── App Letter Avatar ──────────────────────────────────────────────────────
+
+const AVATAR_COLORS = [
+  "#3D7A8A", "#E8956D", "#4FB87A", "#D4A449", "#7C6BC4",
+  "#E06C75", "#2A9D8F", "#E76F51", "#457B9D", "#6A4C93",
+];
+
+function hashCode(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+const AppAvatar = ({ name, size = 40 }: { name: string; size?: number }) => {
+  const letter = name.charAt(0).toUpperCase();
+  const color = AVATAR_COLORS[hashCode(name) % AVATAR_COLORS.length];
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color + "18", alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: color + "30" }}>
+      <Text style={{ fontSize: size * 0.42, fontFamily: Fonts.heading, color }}>{letter}</Text>
     </View>
   );
 };
@@ -654,9 +695,6 @@ export default function StudentHome() {
             ...Shadows.md,
           }}
         >
-          {/* Gradient-like top accent bar */}
-          <View style={{ height: 4, backgroundColor: balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error, opacity: 0.7 }} />
-
           {/* Header row: title + gear */}
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 16 }}>
             <Text style={{ fontSize: 14, fontFamily: Fonts.headingMedium, color: Colors.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
@@ -675,20 +713,23 @@ export default function StudentHome() {
           <AuraOrb balance={balance} />
 
           {/* Balance number */}
-          <Text
-            style={{
-              fontSize: 52,
-              fontFamily: Fonts.heading,
-              color: balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error,
-              textAlign: "center",
-              marginTop: -4,
-              textShadowColor: (balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error) + "40",
-              textShadowOffset: { width: 0, height: 2 },
-              textShadowRadius: 12,
-            }}
-          >
-            {Math.round(balance)}
-          </Text>
+          <View style={{ alignItems: "center", marginTop: -4, marginBottom: 4 }}>
+            <Text
+              style={{
+                fontSize: 56,
+                fontFamily: Fonts.heading,
+                color: balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error,
+                textAlign: "center",
+                textShadowColor: (balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error) + "55",
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 20,
+                letterSpacing: 2,
+              }}
+            >
+              {Math.round(balance)}
+            </Text>
+            <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight, letterSpacing: 2, textTransform: "uppercase", marginTop: -2 }}>points</Text>
+          </View>
 
           {/* Available / Invested row */}
           <View style={{ flexDirection: "row", justifyContent: "center", gap: 32, marginTop: 8, paddingBottom: 20 }}>
@@ -750,9 +791,9 @@ export default function StudentHome() {
             <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{fmt(totalMinutesToday)}</Text>
           </View>
           <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
-            <TrendDownIcon size={16} color={Colors.error} />
+            <TrendDownIcon size={16} color={Colors.textSecondary} />
             <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Aura Drained</Text>
-            <Text style={{ color: Colors.error, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{Math.round(totalDrainedToday)}</Text>
+            <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{Math.round(totalDrainedToday)}</Text>
           </View>
           <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
             <GridIcon size={16} color={Colors.primary} />
@@ -883,7 +924,9 @@ export default function StudentHome() {
             >
               {/* Icon + Info */}
               <View style={{ marginRight: 12 }}>
-                {app.isLocked ? <LockIcon size={24} color={Colors.primary} /> : <SmartphoneIcon size={24} color={Colors.text} />}
+                {app.isLocked
+                  ? <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.errorLight, alignItems: "center", justifyContent: "center" }}><LockIcon size={20} color={Colors.primary} /></View>
+                  : <AppAvatar name={app.appName} size={40} />}
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -931,36 +974,6 @@ export default function StudentHome() {
             </TouchableOpacity>
           );
         })}
-
-        {/* ── How it works ─────────────────────────────────────────────── */}
-        {trackedApps.length > 0 && (
-          <View
-            style={{
-              backgroundColor: Colors.card,
-              borderRadius: 12,
-              padding: 14,
-              marginTop: 12,
-              borderWidth: 1,
-              borderColor: Colors.borderLight,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <InfoIcon size={14} color={Colors.primary} />
-              <Text
-                style={{
-                  color: Colors.primary,
-                  fontFamily: Fonts.heading,
-                  fontSize: 13,
-                }}
-              >
-                How it works
-              </Text>
-            </View>
-            <Text style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 12, lineHeight: 18 }}>
-              {"\u2022 Usage is tracked automatically by Android\n\u2022 Aura drains based on real screen time\n\u2022 Locked apps trigger a 3x penalty + native block overlay\n\u2022 Pull down to refresh your stats"}
-            </Text>
-          </View>
-        )}
 
         {/* Lock service toggle */}
         {trackedApps.some((a) => a.isLocked) && hasOverlayPerm && (
@@ -1081,7 +1094,7 @@ export default function StudentHome() {
                     }}
                   >
                     <View style={{ marginRight: 12 }}>
-                      <SmartphoneIcon size={22} color={Colors.textSecondary} />
+                      <AppAvatar name={app.appName} size={34} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: Colors.text, fontSize: 14 }}>
@@ -1137,7 +1150,9 @@ export default function StudentHome() {
               }}
             >
               <View style={{ alignItems: "center" }}>
-                {settingsApp.isLocked ? <LockIcon size={32} color={Colors.primary} /> : <SmartphoneIcon size={32} color={Colors.text} />}
+                {settingsApp.isLocked
+                  ? <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.errorLight, alignItems: "center", justifyContent: "center" }}><LockIcon size={24} color={Colors.primary} /></View>
+                  : <AppAvatar name={settingsApp.appName} size={48} />}
               </View>
               <Text
                 style={{
