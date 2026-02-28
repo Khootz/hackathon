@@ -8,12 +8,14 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
+  Dimensions,
 } from "react-native";
 import Svg, { Path, Circle, Polyline, Line, Rect } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useLearningStore, type QuizQuestion } from "../../store/learningStore";
 import { useAuraStore } from "../../store/auraStore";
 import { Colors, Fonts, Radii, Shadows } from "../../constants";
+import { speak, stopSpeaking } from "../../lib/polly";
 
 // ── Subjects & Interests ─────────────────────────────────────────────────────
 const SUBJECTS = [
@@ -29,6 +31,19 @@ const INTERESTS = [
   "Clash Royale", "Minecraft", "Roblox", "YouTube",
   "Football", "Basketball", "Anime", "Marvel", "Music", "Space",
 ];
+
+// ── Subject colours (inspired by elegant-mockup-design) ────────────────────
+const SUBJECT_COLORS: Record<string, string> = {
+  Math: Colors.primary,
+  Science: Colors.accent,
+  History: Colors.primaryDark,
+  English: Colors.gold,
+  Geography: Colors.success,
+  Coding: Colors.primaryLight,
+};
+
+const getSubjectColor = (subject: string) =>
+  SUBJECT_COLORS[subject] ?? Colors.primary;
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const ZapIcon = ({ size = 20, color = Colors.textInverse }: { size?: number; color?: string }) => (
@@ -70,6 +85,20 @@ const LightbulbIcon = ({ size = 16, color = Colors.gold }: { size?: number; colo
     <Path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.21 4.16-3 5.2V17H9v-2.8C7.21 13.16 6 11.22 6 9a6 6 0 0 1 6-6z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
+const SpeakerIcon = ({ size = 20, color = Colors.primary, playing = false }: { size?: number; color?: string; playing?: boolean }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M11 5L6 9H2v6h4l5 4V5z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    {playing && (
+      <>
+        <Path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+        <Path d="M19.07 4.93a10 10 0 0 1 0 14.14" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+      </>
+    )}
+    {!playing && (
+      <Path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+    )}
+  </Svg>
+);
 
 // ── Main Component ────────────────────────────────────────────────────────────
 type ScreenMode = "hub" | "generate" | "quiz" | "result";
@@ -90,6 +119,7 @@ export default function LearningHub() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
   const [earnedAura, setEarnedAura] = useState(0);
+  const [isTtsSpeaking, setIsTtsSpeaking] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
@@ -113,7 +143,29 @@ export default function LearningHub() {
     ]).start();
   };
 
-  const switchMode = (next: ScreenMode) => { setMode(next); resetAnim(); };
+  const switchMode = (next: ScreenMode) => {
+    stopSpeaking(); setIsTtsSpeaking(false);
+    setMode(next); resetAnim();
+  };
+
+  // Auto-speak question when it changes in quiz mode
+  useEffect(() => {
+    if (mode === "quiz" && question?.q) {
+      setIsTtsSpeaking(true);
+      speak(question.q).finally(() => setIsTtsSpeaking(false));
+    }
+    return () => { stopSpeaking(); };
+  }, [mode, currentQuestion]);
+
+  const handleTtsToggle = () => {
+    if (isTtsSpeaking) {
+      stopSpeaking();
+      setIsTtsSpeaking(false);
+    } else if (question?.q) {
+      setIsTtsSpeaking(true);
+      speak(question.q).finally(() => setIsTtsSpeaking(false));
+    }
+  };
 
   const handleGenerate = async () => {
     if (!userId || !selectedSubject) return;
@@ -160,31 +212,69 @@ export default function LearningHub() {
   const completedModules = modules.filter((m) => m.completed);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // HUB VIEW
+  // HUB VIEW  (mockup-inspired card grid with progress bars)
   // ─────────────────────────────────────────────────────────────────────────
   if (mode === "hub") {
+    const screenWidth = Dimensions.get("window").width;
+    const cardGap = 12;
+    const cardWidth = (screenWidth - 40 - cardGap) / 2; // 20px padding each side
+
     return (
       <ScrollView
         style={{ flex: 1, backgroundColor: Colors.background }}
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={{ backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 32, paddingHorizontal: 24, overflow: "hidden" }}>
-          <View style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: "rgba(255,255,255,0.07)" }} />
-          <Text style={{ fontFamily: Fonts.body, fontSize: 14, color: "rgba(255,255,255,0.6)", letterSpacing: 0.5 }}>Learning Hub</Text>
-          <Text style={{ fontFamily: Fonts.heading, fontSize: 28, color: Colors.textInverse, marginTop: 2 }}>Your Modules</Text>
-          <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
-            {completedModules.length} of {modules.length} completed
+        {/* ── Hero header ── */}
+        <View style={{ backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 36, paddingHorizontal: 24, overflow: "hidden" }}>
+          {/* Decorative circles (mockup-style) */}
+          <View style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: 110, backgroundColor: "rgba(255,255,255,0.06)" }} />
+          <View style={{ position: "absolute", bottom: -30, left: -20, width: 140, height: 140, borderRadius: 70, backgroundColor: "rgba(255,255,255,0.04)" }} />
+
+          <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: "rgba(255,255,255,0.55)", letterSpacing: 1, textTransform: "uppercase" }}>Learning Hub</Text>
+          <Text style={{ fontFamily: Fonts.heading, fontSize: 30, color: Colors.textInverse, marginTop: 2 }}>Your Modules</Text>
+          <Text style={{ fontFamily: Fonts.body, fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>
+            Complete modules to earn Aura ✦
           </Text>
+
+          {/* Stats row (mockup hero-card style) */}
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 20 }}>
+            {[
+              { label: "Completed", value: completedModules.length },
+              { label: "In progress", value: modules.length - completedModules.length },
+              { label: "Total", value: modules.length },
+            ].map((stat) => (
+              <View
+                key={stat.label}
+                style={{
+                  flex: 1,
+                  backgroundColor: "rgba(255,255,255,0.12)",
+                  borderRadius: Radii.md,
+                  paddingVertical: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontFamily: Fonts.heading, fontSize: 20, color: Colors.textInverse }}>{stat.value}</Text>
+                <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{stat.label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         <Animated.View style={{ padding: 20, gap: 14, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-          {/* Generate CTA */}
+          {/* ── Generate CTA ── */}
           <TouchableOpacity
             onPress={() => switchMode("generate")}
             activeOpacity={0.88}
-            style={{ backgroundColor: Colors.accent, borderRadius: Radii.xl, padding: 24, flexDirection: "row", alignItems: "center", gap: 16, ...Shadows.md }}
+            style={{
+              backgroundColor: Colors.accent,
+              borderRadius: Radii.xl,
+              padding: 24,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 16,
+              ...Shadows.md,
+            }}
           >
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
               <ZapIcon />
@@ -192,67 +282,113 @@ export default function LearningHub() {
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: Fonts.heading, fontSize: 17, color: Colors.textInverse }}>Generate New Module</Text>
               <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>
-                Earn 50-200 Aura per quiz
+                Earn 50–200 Aura per quiz
               </Text>
             </View>
           </TouchableOpacity>
 
-          {/* Modules list */}
+          {/* ── Module grid (mockup 2-col card layout with progress bars) ── */}
           {modules.length > 0 && (
             <View style={{ gap: 10 }}>
-              <Text style={{ fontFamily: Fonts.heading, fontSize: 17, color: Colors.text }}>History</Text>
-              {modules.map((mod) => (
-                <TouchableOpacity
-                  key={mod.id}
-                  onPress={() => {
-                    if (!mod.completed) {
-                      setCurrentModule(mod);
-                      setCurrentQuestion(0);
-                      setScore(0);
-                      setSelectedAnswer(null);
-                      setShowExplanation(false);
-                      switchMode("quiz");
-                    }
-                  }}
-                  activeOpacity={mod.completed ? 1 : 0.85}
-                  style={{
-                    backgroundColor: Colors.card,
-                    borderRadius: Radii.lg,
-                    padding: 16,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                    borderLeftWidth: 3,
-                    borderLeftColor: mod.completed ? Colors.success : Colors.primary,
-                    ...Shadows.sm,
-                  }}
-                >
-                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: mod.completed ? Colors.successLight : Colors.cardTeal, alignItems: "center", justifyContent: "center" }}>
-                    {mod.completed ? <CheckIcon size={16} /> : <BookIcon size={16} />}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 14, color: Colors.text }} numberOfLines={1}>
-                      {mod.title || `${mod.subject} × ${mod.interest}`}
-                    </Text>
-                    <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textLight, marginTop: 2 }}>
-                      {mod.subject} · {mod.interest}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    {mod.completed ? (
-                      <>
-                        <Text style={{ fontFamily: Fonts.heading, fontSize: 14, color: Colors.success }}>{mod.score}/{mod.total_questions}</Text>
-                        <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.gold }}>+{mod.aura_reward} aura</Text>
-                      </>
-                    ) : (
-                      <Text style={{ fontFamily: Fonts.heading, fontSize: 12, color: Colors.primary, letterSpacing: 0.5 }}>RESUME</Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
+              <Text style={{ fontFamily: Fonts.heading, fontSize: 17, color: Colors.text }}>Your Modules</Text>
+
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: cardGap }}>
+                {modules.map((mod) => {
+                  const subjectColor = getSubjectColor(mod.subject);
+                  const progress = mod.completed
+                    ? (mod.total_questions ?? 0) > 0 ? Math.round(((mod.score ?? 0) / (mod.total_questions ?? 1)) * 100) : 100
+                    : 0;
+
+                  return (
+                    <TouchableOpacity
+                      key={mod.id}
+                      onPress={() => {
+                        if (!mod.completed) {
+                          setCurrentModule(mod);
+                          setCurrentQuestion(0);
+                          setScore(0);
+                          setSelectedAnswer(null);
+                          setShowExplanation(false);
+                          switchMode("quiz");
+                        }
+                      }}
+                      activeOpacity={mod.completed ? 0.92 : 0.85}
+                      style={{
+                        width: cardWidth,
+                        backgroundColor: Colors.card,
+                        borderRadius: Radii.lg,
+                        padding: 18,
+                        gap: 8,
+                        ...Shadows.sm,
+                      }}
+                    >
+                      {/* Top row: subject tag + aura badge */}
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <Text
+                          style={{
+                            fontFamily: Fonts.headingMedium,
+                            fontSize: 10,
+                            color: subjectColor,
+                            letterSpacing: 1,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {mod.subject}
+                        </Text>
+                        <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: Colors.gold }}>
+                          +{mod.aura_reward ?? "?"} ✦
+                        </Text>
+                      </View>
+
+                      {/* Title */}
+                      <Text
+                        numberOfLines={2}
+                        style={{
+                          fontFamily: Fonts.heading,
+                          fontSize: 14,
+                          color: Colors.text,
+                          lineHeight: 19,
+                          minHeight: 38,
+                        }}
+                      >
+                        {mod.title || `${mod.subject} × ${mod.interest}`}
+                      </Text>
+
+                      {/* Progress bar */}
+                      <View style={{ height: 6, borderRadius: 3, backgroundColor: Colors.borderLight, overflow: "hidden" }}>
+                        <View
+                          style={{
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: subjectColor,
+                            width: `${progress}%`,
+                          }}
+                        />
+                      </View>
+
+                      {/* Bottom row: progress text + action */}
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight }}>
+                          {mod.completed ? `${progress}% score` : "Not started"}
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: Fonts.headingMedium,
+                            fontSize: 12,
+                            color: mod.completed ? Colors.success : Colors.primary,
+                          }}
+                        >
+                          {mod.completed ? "Review" : "Continue →"}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
           )}
 
+          {/* ── Empty state ── */}
           {modules.length === 0 && !loading && (
             <View style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 32, alignItems: "center", ...Shadows.sm }}>
               <BookIcon size={32} color={Colors.textLight} />
@@ -287,23 +423,24 @@ export default function LearningHub() {
           Pick a subject and something you enjoy — we'll connect the two.
         </Text>
 
-        {/* Subject Grid */}
+        {/* Subject Grid (colour-coded like mockup) */}
         <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.textLight, letterSpacing: 0.8, marginBottom: 10 }}>SUBJECT</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
           {SUBJECTS.map((s) => {
             const active = selectedSubject === s.label;
+            const subjectClr = getSubjectColor(s.label);
             return (
               <TouchableOpacity
                 key={s.label}
                 onPress={() => setSelectedSubject(s.label)}
                 activeOpacity={0.8}
                 style={{
-                  backgroundColor: active ? Colors.primary : Colors.card,
+                  backgroundColor: active ? subjectClr : Colors.card,
                   borderRadius: Radii.md,
                   paddingVertical: 10,
                   paddingHorizontal: 18,
                   borderWidth: 1.5,
-                  borderColor: active ? Colors.primary : Colors.border,
+                  borderColor: active ? subjectClr : Colors.border,
                   ...Shadows.sm,
                 }}
               >
@@ -420,14 +557,42 @@ export default function LearningHub() {
           </View>
         </View>
 
-        {/* Progress bar */}
-        <View style={{ height: 5, backgroundColor: Colors.borderLight, borderRadius: 3, marginBottom: 24, overflow: "hidden" }}>
-          <Animated.View style={{ height: 5, backgroundColor: Colors.primary, borderRadius: 3, width: `${progress * 100}%` }} />
+        {/* Progress bar (subject-coloured) */}
+        <View style={{ height: 6, backgroundColor: Colors.borderLight, borderRadius: 3, marginBottom: 24, overflow: "hidden" }}>
+          <Animated.View style={{ height: 6, backgroundColor: currentModule ? getSubjectColor(currentModule.subject) : Colors.primary, borderRadius: 3, width: `${progress * 100}%` }} />
         </View>
+
+        {/* Subject + module label */}
+        {currentModule && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <View style={{ backgroundColor: getSubjectColor(currentModule.subject) + "18", paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radii.full }}>
+              <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 10, color: getSubjectColor(currentModule.subject), letterSpacing: 0.8, textTransform: "uppercase" }}>
+                {currentModule.subject}
+              </Text>
+            </View>
+            <Text style={{ fontFamily: Fonts.body, fontSize: 12, color: Colors.textLight }} numberOfLines={1}>{currentModule.title}</Text>
+          </View>
+        )}
 
         {/* Question card */}
         <View style={{ backgroundColor: Colors.card, borderRadius: Radii.xl, padding: 22, marginBottom: 16, ...Shadows.md }}>
-          <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.textLight, letterSpacing: 0.8, marginBottom: 10 }}>QUESTION {currentQuestion + 1}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.textLight, letterSpacing: 0.8 }}>QUESTION {currentQuestion + 1}</Text>
+            <TouchableOpacity
+              onPress={handleTtsToggle}
+              activeOpacity={0.7}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: isTtsSpeaking ? Colors.primaryLight + "30" : Colors.background,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <SpeakerIcon size={18} color={isTtsSpeaking ? Colors.primary : Colors.textLight} playing={isTtsSpeaking} />
+            </TouchableOpacity>
+          </View>
           <Text style={{ fontFamily: Fonts.heading, fontSize: 18, color: Colors.text, lineHeight: 26 }}>
             {question.q}
           </Text>
@@ -507,6 +672,15 @@ export default function LearningHub() {
 
     return (
       <View style={{ flex: 1, backgroundColor: Colors.background, padding: 24, justifyContent: "center", alignItems: "center" }}>
+        {/* Subject badge */}
+        {currentModule && (
+          <View style={{ backgroundColor: getSubjectColor(currentModule.subject) + "18", paddingHorizontal: 14, paddingVertical: 5, borderRadius: Radii.full, marginBottom: 20 }}>
+            <Text style={{ fontFamily: Fonts.headingMedium, fontSize: 11, color: getSubjectColor(currentModule.subject), letterSpacing: 0.8, textTransform: "uppercase" }}>
+              {currentModule.subject} · {currentModule.interest}
+            </Text>
+          </View>
+        )}
+
         {/* Score ring */}
         <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.card, alignItems: "center", justifyContent: "center", marginBottom: 24, ...Shadows.lg, borderWidth: 4, borderColor: great ? Colors.success : ok ? Colors.gold : Colors.error }}>
           <Text style={{ fontFamily: Fonts.heading, fontSize: 32, color: great ? Colors.success : ok ? Colors.gold : Colors.error }}>{score}</Text>

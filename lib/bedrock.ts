@@ -4,7 +4,7 @@
  * Uses the Bedrock **Runtime** Converse API with IAM access-key auth (SigV4).
  * Works in React Native / Hermes via `crypto-js` (pure JS).
  *
- * Model: Amazon Nova Lite  (amazon.nova-lite-v1:0)
+ * Model: Meta Llama 4 Maverick
  */
 
 import { signRequest } from "./awsSigner";
@@ -13,7 +13,7 @@ import { signRequest } from "./awsSigner";
 
 const AWS_REGION = process.env.EXPO_PUBLIC_AWS_REGION ?? "us-east-1";
 
-const BEDROCK_MODEL_ID = "amazon.nova-lite-v1:0";
+const BEDROCK_MODEL_ID = "us.meta.llama4-maverick-17b-instruct-v1:0";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -82,10 +82,13 @@ export async function bedrockConverse(
   // Converse API response structure
   const outputMessage = data.output?.message;
   if (!outputMessage?.content?.[0]?.text) {
+    console.error("[Bedrock] Unexpected response structure:", JSON.stringify(data).slice(0, 500));
     throw new Error("Bedrock: unexpected response structure");
   }
 
-  return outputMessage.content[0].text;
+  const text = outputMessage.content[0].text;
+  console.log("[Bedrock] Raw response text:", text.slice(0, 200));
+  return text;
 }
 
 // ── Quiz generation (replaces openrouter.generateQuiz) ───────────────────────
@@ -102,17 +105,30 @@ Use metaphors and scenarios from ${interest}. Return JSON only (no markdown): {t
     {
       role: "system",
       content:
-        "You are an educational content creator. Always respond with valid JSON only, no markdown formatting.",
+        "You are an educational content creator. Always respond with valid JSON only — no markdown, no code fences, no explanatory text before or after. The response must start with { and end with }.",
     },
     { role: "user", content: prompt },
   ]);
 
-  // Strip any accidental markdown fences
-  const cleaned = response
+  // Guard: if bedrockConverse already returned a parsed object, use it directly
+  if (typeof response !== "string") {
+    return response;
+  }
+
+  console.log("[Bedrock] generateQuiz raw:", response.slice(0, 300));
+
+  // Strip any accidental markdown fences or preamble
+  let cleaned = response
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/i, "")
     .replace(/```\s*$/i, "")
     .trim();
+
+  // If model prepended text before the JSON, extract the JSON object
+  const jsonStart = cleaned.indexOf("{");
+  if (jsonStart > 0) {
+    cleaned = cleaned.slice(jsonStart);
+  }
 
   return JSON.parse(cleaned);
 }

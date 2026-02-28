@@ -1,5 +1,27 @@
-import { invokeAgent } from "./bedrockAgentCore";
+import { bedrockConverse } from "./bedrock";
 import { RISK_REGISTRY, RiskEntry } from "../constants";
+
+// ── Child-safety system prompt for Bedrock Converse ──────────────────────────
+
+const CHILD_SAFETY_SYSTEM_PROMPT = `You are a child safety AI for AuraMax, a parental control app protecting children aged 10-16.
+Evaluate whether the given app context is suspicious or harmful for a minor.
+Respond ONLY with valid JSON — no markdown, no code fences, no extra text — in exactly this shape:
+{
+  "suspicious": boolean,
+  "confidence": number,
+  "severity": "minor" | "critical",
+  "reasoning": "brief max 120 char explanation",
+  "trigger_action": "notify_child" | "notify_parent" | "lock_app" | "none"
+}
+Rules:
+- confidence is 0.0–1.0
+- severity "critical" = immediate danger (adult content, dating, gambling, stranger chat, anonymous browsing)
+- severity "minor" = concerning but not immediately dangerous (social media, chat platforms)
+- Increase confidence if child is under 13
+- Increase confidence if time is late night (22:00 - 06:00)
+- Increase confidence if session > 10 minutes on flagged apps
+- trigger_action "lock_app" for critically dangerous apps with repeated flags
+- trigger_action "notify_parent" for all critical, "notify_child" for minor`;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,7 +63,7 @@ export function matchRiskRegistry(
   return null;
 }
 
-// ── Tier 2: LLM analysis via AWS Bedrock AgentCore ───────────────────────────
+// ── Tier 2: LLM analysis via AWS Bedrock Converse ────────────────────────────
 
 export async function analyzeSuspiciousApp(
   ctx: DetectionContext
@@ -58,8 +80,10 @@ export async function analyzeSuspiciousApp(
     `Is this suspicious for a minor?`;
 
   try {
-    const sessionId = `aura-${Date.now()}`;
-    const raw = await invokeAgent(userMessage, sessionId);
+    const raw = await bedrockConverse([
+      { role: "system", content: CHILD_SAFETY_SYSTEM_PROMPT },
+      { role: "user", content: userMessage },
+    ]);
 
     // Strip any accidental markdown fences
     const cleaned = raw
