@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -6,21 +6,117 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Animated,
 } from "react-native";
 import { useAuthStore } from "../../store/authStore";
 import { useAlertStore } from "../../store/alertStore";
+import { supabase } from "../../lib/supabase";
+
+// ── Live toast for new incoming alerts ───────────────────────────────────────
+
+function NewAlertToast({
+  alert,
+  onDismiss,
+}: {
+  alert: { severity: "minor" | "critical"; app_name: string | null; message: string } | null;
+  onDismiss: () => void;
+}) {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!alert) return;
+    Animated.sequence([
+      Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(4000),
+      Animated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start(() => onDismiss());
+  }, [alert]);
+
+  if (!alert) return null;
+
+  const isCritical = alert.severity === "critical";
+  return (
+    <Animated.View
+      style={{
+        opacity,
+        position: "absolute",
+        top: 12,
+        left: 16,
+        right: 16,
+        zIndex: 999,
+        backgroundColor: isCritical ? "#3b0014" : "#2a200a",
+        borderLeftWidth: 4,
+        borderLeftColor: isCritical ? "#FF1744" : "#FFD700",
+        borderRadius: 10,
+        padding: 14,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 8,
+      }}
+    >
+      <Text style={{ color: isCritical ? "#FF1744" : "#FFD700", fontWeight: "bold", fontSize: 13 }}>
+        {isCritical ? "🚨 New Critical Alert" : "⚠️ New Minor Alert"}
+        {alert.app_name ? ` — ${alert.app_name}` : ""}
+      </Text>
+      <Text style={{ color: "#e2e8f0", fontSize: 12, marginTop: 4 }}>{alert.message}</Text>
+    </Animated.View>
+  );
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function NotificationsScreen() {
   const user = useAuthStore((s) => s.user);
   const { alerts, fetchAlerts, acknowledgeAlert, loading } = useAlertStore();
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<"all" | "minor" | "critical">("all");
+  const [liveAlert, setLiveAlert] = useState<{
+    severity: "minor" | "critical";
+    app_name: string | null;
+    message: string;
+  } | null>(null);
 
   const userId = user?.id;
 
   useEffect(() => {
     if (userId) fetchAlerts(userId);
   }, [userId]);
+
+  // ── Realtime subscription ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`parent-alerts-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "security_alerts",
+          filter: `parent_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newRow = payload.new as any;
+          // Refresh the full list
+          fetchAlerts(userId);
+          // Show live toast
+          setLiveAlert({
+            severity: newRow.severity,
+            app_name: newRow.app_name,
+            message: newRow.message,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
 
   const onRefresh = useCallback(async () => {
     if (!userId) return;
@@ -62,13 +158,17 @@ export default function NotificationsScreen() {
   const unacknowledgedCount = alerts.filter((a) => !a.acknowledged).length;
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: "#0f0f23" }}
-      contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />
-      }
-    >
+    <View style={{ flex: 1, backgroundColor: "#0f0f23" }}>
+      {/* Live incoming alert toast */}
+      <NewAlertToast alert={liveAlert} onDismiss={() => setLiveAlert(null)} />
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />
+        }
+      >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <View>
           <Text style={{ fontSize: 24, fontWeight: "bold", color: "#fff" }}>
@@ -216,5 +316,6 @@ export default function NotificationsScreen() {
         ))
       )}
     </ScrollView>
+    </View>
   );
 }
