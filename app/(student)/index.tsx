@@ -13,10 +13,11 @@ import {
   ActivityIndicator,
   Platform,
   Animated,
+  Easing,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import Svg, { Path, Rect, Circle, Line, Polyline } from "react-native-svg";
+import Svg, { Path, Rect, Circle, Line, Polyline, Defs, RadialGradient, Stop, Ellipse, LinearGradient } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useAuraStore } from "../../store/auraStore";
 import * as UsageStats from "../../modules/usage-stats";
@@ -126,6 +127,121 @@ const InfoIcon = ({ size = 14, color = Colors.primary }: { size?: number; color?
   </Svg>
 );
 
+const GearIcon = ({ size = 20, color = Colors.textSecondary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth={2} />
+    <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke={color} strokeWidth={2} />
+  </Svg>
+);
+
+// ── Animated Aura Orb ────────────────────────────────────────────────────────
+
+const AuraOrb = ({ balance }: { balance: number }) => {
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    // Continuous Y-axis rotation (perspective simulates 3D Z feel)
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 6000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Subtle pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.06, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+
+    // Glow pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, { toValue: 0.7, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 0.3, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  // Map balance to color scheme
+  const orbCore = balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error;
+  const orbGlow = balance > 100 ? "#D4A449" : balance > 0 ? "#F4A261" : "#E06C75";
+  const orbOuter = balance > 100 ? "#FBF1DC" : balance > 0 ? "#FEF3E8" : "#FCEEEF";
+
+  const rotateY = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  return (
+    <View style={{ alignItems: "center", marginVertical: 8 }}>
+      {/* Outer glow ring */}
+      <Animated.View style={{ opacity: glowAnim, position: "absolute", width: 140, height: 140, borderRadius: 70, backgroundColor: orbGlow + "15" }} />
+      <Animated.View style={{ opacity: glowAnim, position: "absolute", width: 120, height: 120, borderRadius: 60, backgroundColor: orbGlow + "20" }} />
+
+      {/* Rotating orb */}
+      <Animated.View
+        style={{
+          transform: [{ perspective: 800 }, { rotateY }, { scale: pulseAnim }],
+          width: 100,
+          height: 100,
+          borderRadius: 50,
+          alignItems: "center",
+          justifyContent: "center",
+          shadowColor: orbGlow,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.6,
+          shadowRadius: 20,
+          elevation: 12,
+        }}
+      >
+        <Svg width={100} height={100} viewBox="0 0 100 100">
+          <Defs>
+            <RadialGradient id="orbGrad" cx="40%" cy="35%" rx="50%" ry="50%">
+              <Stop offset="0%" stopColor={"#FFFFFF"} stopOpacity={0.9} />
+              <Stop offset="25%" stopColor={orbOuter} stopOpacity={0.8} />
+              <Stop offset="60%" stopColor={orbCore} stopOpacity={0.9} />
+              <Stop offset="100%" stopColor={orbGlow} stopOpacity={1} />
+            </RadialGradient>
+            <RadialGradient id="orbShine" cx="35%" cy="30%" rx="30%" ry="30%">
+              <Stop offset="0%" stopColor={"#FFFFFF"} stopOpacity={0.8} />
+              <Stop offset="100%" stopColor={"#FFFFFF"} stopOpacity={0} />
+            </RadialGradient>
+            <LinearGradient id="orbRim" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor={"#FFFFFF"} stopOpacity={0.5} />
+              <Stop offset="50%" stopColor={orbCore} stopOpacity={0.3} />
+              <Stop offset="100%" stopColor={orbGlow} stopOpacity={0.6} />
+            </LinearGradient>
+          </Defs>
+          {/* Main orb sphere */}
+          <Circle cx="50" cy="50" r="46" fill="url(#orbGrad)" />
+          {/* Rim highlight */}
+          <Circle cx="50" cy="50" r="46" fill="none" stroke="url(#orbRim)" strokeWidth={1.5} />
+          {/* Shine highlight */}
+          <Ellipse cx="38" cy="35" rx="18" ry="14" fill="url(#orbShine)" />
+          {/* Inner aura shield icon */}
+          <Path
+            d="M50 28c0 0 16 8 16 20s-16 20-16 20-16-8-16-20 16-20 16-20z"
+            fill="none"
+            stroke={"#FFFFFF"}
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            opacity={0.6}
+          />
+          {/* Center dot */}
+          <Circle cx="50" cy="50" r="3" fill={"#FFFFFF"} opacity={0.7} />
+        </Svg>
+      </Animated.View>
+    </View>
+  );
+};
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function StudentHome() {
@@ -156,6 +272,7 @@ export default function StudentHome() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [settingsApp, setSettingsApp] = useState<TrackedApp | null>(null);
   const [showAppLock, setShowAppLock] = useState(false);
+  const [showDevPanel, setShowDevPanel] = useState(false);
 
   const available = Math.max(0, balance - invested);
 
@@ -531,79 +648,98 @@ export default function StudentHome() {
         <View
           style={{
             backgroundColor: Colors.card,
-            borderRadius: Radii.xl,
-            padding: 20,
+            borderRadius: Radii.xxl,
             marginTop: 4,
-            alignItems: "center",
-            ...Shadows.sm,
+            overflow: "hidden",
+            ...Shadows.md,
           }}
         >
-          <Text style={{ fontSize: 13, fontFamily: Fonts.body, color: Colors.textSecondary }}>Aura Balance</Text>
+          {/* Gradient-like top accent bar */}
+          <View style={{ height: 4, backgroundColor: balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error, opacity: 0.7 }} />
+
+          {/* Header row: title + gear */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 16 }}>
+            <Text style={{ fontSize: 14, fontFamily: Fonts.headingMedium, color: Colors.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
+              Aura Balance
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowDevPanel(!showDevPanel)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={{ padding: 4, borderRadius: Radii.full, backgroundColor: showDevPanel ? Colors.primaryLight + "40" : "transparent" }}
+            >
+              <GearIcon size={18} color={showDevPanel ? Colors.primary : Colors.textLight} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Aura Orb */}
+          <AuraOrb balance={balance} />
+
+          {/* Balance number */}
           <Text
             style={{
-              fontSize: 44,
+              fontSize: 52,
               fontFamily: Fonts.heading,
-              color:
-                balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error,
-              marginTop: 4,
+              color: balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error,
+              textAlign: "center",
+              marginTop: -4,
+              textShadowColor: (balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error) + "40",
+              textShadowOffset: { width: 0, height: 2 },
+              textShadowRadius: 12,
             }}
           >
             {Math.round(balance)}
           </Text>
-          <View style={{ flexDirection: "row", gap: 24, marginTop: 6 }}>
+
+          {/* Available / Invested row */}
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 32, marginTop: 8, paddingBottom: 20 }}>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11 }}>Available</Text>
-              <Text style={{ color: Colors.success, fontFamily: Fonts.heading }}>
+              <Text style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}>Available</Text>
+              <Text style={{ color: Colors.success, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>
                 {Math.round(available)}
               </Text>
             </View>
+            <View style={{ width: 1, backgroundColor: Colors.separator, marginVertical: 2 }} />
             <View style={{ alignItems: "center" }}>
-              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11 }}>Invested</Text>
-              <Text style={{ color: Colors.primary, fontFamily: Fonts.heading }}>
+              <Text style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}>Invested</Text>
+              <Text style={{ color: Colors.primary, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>
                 {Math.round(invested)}
               </Text>
             </View>
           </View>
-        </View>
 
-        {/* ── DEV: Quick Aura Controls (remove before release) ── */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 8,
-            marginTop: 10,
-            backgroundColor: Colors.primaryLight,
-            borderRadius: 10,
-            padding: 10,
-            borderWidth: 1,
-            borderColor: Colors.primary,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ color: Colors.primary, fontSize: 11, fontWeight: "bold", marginRight: 4 }}>
-            DEV
-          </Text>
-          {[
-            { label: "+50", fn: () => userId && earnAura(userId, 50, "DEV") },
-            { label: "+200", fn: () => userId && earnAura(userId, 200, "DEV") },
-            { label: "-50", fn: () => userId && drainAura(userId, 50, "DEV") },
-            { label: "Set 10", fn: async () => { if (userId) { const drain = Math.max(0, balance - 10); if (drain > 0) await drainAura(userId, drain, "DEV"); } } },
-            { label: "Set 0", fn: async () => { if (userId) { if (balance > 0) await drainAura(userId, balance, "DEV"); setShowAppLock(true); } } },
-          ].map((btn) => (
-            <TouchableOpacity
-              key={btn.label}
-              onPress={async () => { await btn.fn(); await fetchBalance(userId!); }}
-              style={{
-                flex: 1,
-                backgroundColor: Colors.cardTeal,
-                borderRadius: 6,
-                paddingVertical: 6,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: Colors.text, fontSize: 12, fontWeight: "bold" }}>{btn.label}</Text>
-            </TouchableOpacity>
-          ))}
+          {/* DEV Panel (collapsible) */}
+          {showDevPanel && (
+            <View style={{ borderTopWidth: 1, borderTopColor: Colors.separator, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.backgroundAlt }}>
+              <Text style={{ color: Colors.primary, fontFamily: Fonts.mono, fontSize: 10, marginBottom: 8, letterSpacing: 1 }}>
+                DEV CONTROLS
+              </Text>
+              <View style={{ flexDirection: "row", gap: 6 }}>
+                {[
+                  { label: "+50", fn: () => userId && earnAura(userId, 50, "DEV") },
+                  { label: "+200", fn: () => userId && earnAura(userId, 200, "DEV") },
+                  { label: "-50", fn: () => userId && drainAura(userId, 50, "DEV") },
+                  { label: "Set 10", fn: async () => { if (userId) { const drain = Math.max(0, balance - 10); if (drain > 0) await drainAura(userId, drain, "DEV"); } } },
+                  { label: "Set 0", fn: async () => { if (userId) { if (balance > 0) await drainAura(userId, balance, "DEV"); setShowAppLock(true); } } },
+                ].map((btn) => (
+                  <TouchableOpacity
+                    key={btn.label}
+                    onPress={async () => { await btn.fn(); await fetchBalance(userId!); }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: Colors.card,
+                      borderRadius: Radii.sm,
+                      paddingVertical: 8,
+                      alignItems: "center",
+                      borderWidth: 1,
+                      borderColor: Colors.border,
+                    }}
+                  >
+                    <Text style={{ color: Colors.text, fontFamily: Fonts.headingMedium, fontSize: 12 }}>{btn.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Quick Stats */}
