@@ -11,6 +11,7 @@ import {
 import Svg, { Path, Polyline } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useAlertStore } from "../../store/alertStore";
+import { supabase } from "../../lib/supabase";
 import { Colors, Fonts, Radii, Shadows } from "../../constants";
 
 function BellIcon({ size = 22, color = Colors.textInverse }: { size?: number; color?: string }) {
@@ -73,6 +74,28 @@ export default function NotificationsScreen() {
       Animated.timing(fadeAnim, { toValue: 1, duration: 460, useNativeDriver: true }),
       Animated.spring(slideAnim, { toValue: 0, tension: 70, friction: 14, useNativeDriver: true }),
     ]).start();
+
+    // Realtime subscription for live alerts
+    if (!userId) return;
+    const channel = supabase
+      .channel("parent-alerts")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "security_alerts",
+          filter: `parent_id=eq.${userId}`,
+        },
+        () => {
+          fetchAlerts(userId);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   const onRefresh = useCallback(async () => {

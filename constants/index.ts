@@ -96,3 +96,36 @@ export const AuraRules = {
   DEFAULT_DRAIN_RATE: 1, // points per minute
   COMPOUND_RATE: 0.02, // 2% daily
 };
+
+// ── Suspicious Activity Detection ──────────────────────────────────────────
+
+export interface RiskEntry {
+  patterns: string[];
+  category: string;
+  baseSeverity: "minor" | "critical";
+  minMinutes: number;
+  description: string;
+}
+
+export const RISK_REGISTRY: RiskEntry[] = [
+  { patterns: ["tiktok", "musically"], category: "short-form-video", baseSeverity: "minor", minMinutes: 0, description: "Addictive short-form video platform" },
+  { patterns: ["discord"], category: "unmoderated-chat", baseSeverity: "minor", minMinutes: 0, description: "Voice/text chat with strangers possible" },
+  { patterns: ["omegle", "chatroulette", "monkey"], category: "stranger-video-chat", baseSeverity: "critical", minMinutes: 0, description: "Random stranger video chat — high risk" },
+  { patterns: ["tinder", "bumble", "hinge", "grindr", "badoo"], category: "dating-app", baseSeverity: "critical", minMinutes: 0, description: "Dating / hookup platform" },
+  { patterns: ["pornhub", "xvideos", "xhamster", "xnxx", "onlyfans"], category: "adult-content", baseSeverity: "critical", minMinutes: 0, description: "Explicit adult content" },
+  { patterns: ["bet365", "draftkings", "fanduel", "pokerstars", "stake.com", "1xbet"], category: "gambling", baseSeverity: "critical", minMinutes: 0, description: "Online gambling / betting" },
+  { patterns: ["snapchat"], category: "ephemeral-messaging", baseSeverity: "minor", minMinutes: 0, description: "Disappearing messages — hard to monitor" },
+  { patterns: ["netflix", "disneyplus", "hulu", "primevideo", "hbomax"], category: "streaming-binge", baseSeverity: "minor", minMinutes: 30, description: "Extended streaming session" },
+  { patterns: ["wattpad", "ao3", "archiveofourown"], category: "unmoderated-fiction", baseSeverity: "minor", minMinutes: 0, description: "User-generated fiction — may contain mature content" },
+  { patterns: ["twitter", "x.com"], category: "social-media-unfiltered", baseSeverity: "minor", minMinutes: 0, description: "Unfiltered social media feed" },
+  { patterns: ["reddit"], category: "forum-unmoderated", baseSeverity: "minor", minMinutes: 0, description: "Community forums with NSFW sections" },
+  { patterns: ["tor", "onionbrowser", "orbot"], category: "anonymity-tool", baseSeverity: "critical", minMinutes: 0, description: "Dark web access tool" },
+];
+
+export const DetectionConfig = {
+  INTERVAL_MS: 10_000,
+  CONFIDENCE_THRESHOLD: 0.65,
+  ALERT_COOLDOWN_MS: 15 * 60 * 1000,
+  SAME_APP_SKIP_MS: 30_000,
+  MAX_FLAGS_PER_DAY: 20,
+};

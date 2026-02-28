@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -12,9 +12,11 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Animated,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import Svg, { Path, Rect, Circle, Line, Polyline } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useAuraStore } from "../../store/auraStore";
 import * as UsageStats from "../../modules/usage-stats";
@@ -41,6 +43,88 @@ const STORAGE_KEYS = {
 function todayDrainKey() {
   return STORAGE_KEYS.drainRecord + new Date().toISOString().split("T")[0];
 }
+
+// ── SVG Icons ────────────────────────────────────────────────────────────────
+
+const UnlockIcon = ({ size = 24, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="11" width="18" height="11" rx="2" stroke={color} strokeWidth={2} />
+    <Path d="M7 11V7a5 5 0 0 1 9.9-1" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
+const LockIcon = ({ size = 24, color = Colors.error }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="11" width="18" height="11" rx="2" stroke={color} strokeWidth={2} />
+    <Path d="M7 11V7a5 5 0 0 1 10 0v4" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
+const SmartphoneIcon = ({ size = 24, color = Colors.text }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="5" y="2" width="14" height="20" rx="2" stroke={color} strokeWidth={2} />
+    <Line x1="12" y1="18" x2="12.01" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
+const AlertTriangleIcon = ({ size = 20, color = Colors.warning }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+    <Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="17" x2="12.01" y2="17" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
+const ShieldIcon = ({ size = 16, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+  </Svg>
+);
+
+const PlusIcon = ({ size = 14, color = Colors.textInverse }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Line x1="12" y1="5" x2="12" y2="19" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
+    <Line x1="5" y1="12" x2="19" y2="12" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
+  </Svg>
+);
+
+const XIcon = ({ size = 22, color = Colors.textSecondary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Line x1="18" y1="6" x2="6" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="6" y1="6" x2="18" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
+const ClockIcon = ({ size = 16, color = Colors.textSecondary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth={2} />
+    <Polyline points="12 6 12 12 16 14" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const TrendDownIcon = ({ size = 16, color = Colors.error }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Polyline points="23 18 13.5 8.5 8.5 13.5 1 6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Polyline points="17 18 23 18 23 12" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const GridIcon = ({ size = 16, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="3" width="7" height="7" stroke={color} strokeWidth={2} rx="1" />
+    <Rect x="14" y="3" width="7" height="7" stroke={color} strokeWidth={2} rx="1" />
+    <Rect x="14" y="14" width="7" height="7" stroke={color} strokeWidth={2} rx="1" />
+    <Rect x="3" y="14" width="7" height="7" stroke={color} strokeWidth={2} rx="1" />
+  </Svg>
+);
+
+const InfoIcon = ({ size = 14, color = Colors.primary }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth={2} />
+    <Line x1="12" y1="16" x2="12" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="8" x2="12.01" y2="8" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -74,6 +158,19 @@ export default function StudentHome() {
   const [showAppLock, setShowAppLock] = useState(false);
 
   const available = Math.max(0, balance - invested);
+
+  // ── Animations ───────────────────────────────────────────────────────────
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    if (!loading && permChecked && hasUsageAccess) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [loading, permChecked, hasUsageAccess]);
 
   // ── Permission checks ────────────────────────────────────────────────────
 
@@ -338,13 +435,15 @@ export default function StudentHome() {
           padding: 32,
         }}
       >
-        <Text style={{ fontSize: 56 }}>{"\uD83D\uDD13"}</Text>
+        <View style={{ backgroundColor: Colors.primaryLight, borderRadius: Radii.full, padding: 20, marginBottom: 16 }}>
+          <UnlockIcon size={48} color={Colors.primary} />
+        </View>
         <Text
           style={{
             fontSize: 22,
-            fontWeight: "bold",
+            fontFamily: Fonts.heading,
             color: Colors.text,
-            marginTop: 16,
+            marginTop: 8,
             textAlign: "center",
           }}
         >
@@ -353,6 +452,7 @@ export default function StudentHome() {
         <Text
           style={{
             fontSize: 14,
+            fontFamily: Fonts.body,
             color: Colors.textSecondary,
             textAlign: "center",
             marginTop: 10,
@@ -362,24 +462,23 @@ export default function StudentHome() {
           AuraMax needs permission to read app usage so it can automatically track screen time.
         </Text>
         <TouchableOpacity
-          onPress={() => {
-            UsageStats.requestUsageAccess();
-          }}
+          onPress={() => UsageStats.requestUsageAccess()}
           style={{
             backgroundColor: Colors.primary,
             padding: 16,
-            borderRadius: 12,
+            borderRadius: Radii.md,
             alignItems: "center",
             marginTop: 24,
             width: "100%",
+            ...Shadows.sm,
           }}
         >
-          <Text style={{ color: Colors.text, fontSize: 16, fontWeight: "bold" }}>
+          <Text style={{ color: Colors.textInverse, fontSize: 16, fontFamily: Fonts.heading }}>
             Grant Usage Access
           </Text>
         </TouchableOpacity>
         <Text
-          style={{ color: Colors.textLight, fontSize: 12, textAlign: "center", marginTop: 12 }}
+          style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 12, textAlign: "center", marginTop: 12 }}
         >
           Find AuraMax in the list and toggle it on, then come back.
         </Text>
@@ -398,7 +497,7 @@ export default function StudentHome() {
         }}
       >
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={{ color: Colors.textSecondary, marginTop: 12 }}>Loading real usage data...</Text>
+        <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, marginTop: 12 }}>Loading real usage data...</Text>
       </View>
     );
   }
@@ -407,38 +506,43 @@ export default function StudentHome() {
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.textInverse} />
         }
       >
-        {/* Header */}
-        <Text style={{ fontSize: 26, fontWeight: "bold", color: Colors.text }}>
-          Hey, {userName}!
-        </Text>
-        <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 2 }}>
-          {balance > 100
-            ? "Your screen time is being tracked automatically."
-            : "Aura running low \u2014 time to learn!"}
-        </Text>
+        {/* Hero Header */}
+        <View style={{ backgroundColor: Colors.primary, paddingTop: 56, paddingBottom: 32, paddingHorizontal: 24, borderBottomLeftRadius: Radii.xl, borderBottomRightRadius: Radii.xl, overflow: "hidden" }}>
+          <View style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: "rgba(255,255,255,0.08)" }} />
+          <View style={{ position: "absolute", bottom: -20, left: -20, width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.06)" }} />
+          <Text style={{ fontSize: 26, fontFamily: Fonts.heading, color: Colors.textInverse }}>
+            Hey, {userName}!
+          </Text>
+          <Text style={{ fontSize: 14, fontFamily: Fonts.body, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>
+            {balance > 100
+              ? "Your screen time is being tracked automatically."
+              : "Aura running low \u2014 time to learn!"}
+          </Text>
+        </View>
+
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], padding: 20 }}>
 
         {/* Aura Balance */}
         <View
           style={{
             backgroundColor: Colors.card,
-            borderRadius: 16,
+            borderRadius: Radii.xl,
             padding: 20,
-            marginTop: 16,
+            marginTop: 4,
             alignItems: "center",
-            borderWidth: 1,
-            borderColor: balance > 100 ? Colors.border : Colors.error,
+            ...Shadows.sm,
           }}
         >
-          <Text style={{ fontSize: 13, color: Colors.textSecondary }}>Aura Balance</Text>
+          <Text style={{ fontSize: 13, fontFamily: Fonts.body, color: Colors.textSecondary }}>Aura Balance</Text>
           <Text
             style={{
               fontSize: 44,
-              fontWeight: "bold",
+              fontFamily: Fonts.heading,
               color:
                 balance > 100 ? Colors.gold : balance > 0 ? Colors.warning : Colors.error,
               marginTop: 4,
@@ -448,14 +552,14 @@ export default function StudentHome() {
           </Text>
           <View style={{ flexDirection: "row", gap: 24, marginTop: 6 }}>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Available</Text>
-              <Text style={{ color: Colors.success, fontWeight: "bold" }}>
+              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11 }}>Available</Text>
+              <Text style={{ color: Colors.success, fontFamily: Fonts.heading }}>
                 {Math.round(available)}
               </Text>
             </View>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Invested</Text>
-              <Text style={{ color: Colors.primary, fontWeight: "bold" }}>
+              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11 }}>Invested</Text>
+              <Text style={{ color: Colors.primary, fontFamily: Fonts.heading }}>
                 {Math.round(invested)}
               </Text>
             </View>
@@ -504,74 +608,20 @@ export default function StudentHome() {
 
         {/* Quick Stats */}
         <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: Colors.card,
-              borderRadius: 12,
-              padding: 14,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: Colors.border,
-            }}
-          >
-            <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Screen Time</Text>
-            <Text
-              style={{
-                color: Colors.text,
-                fontWeight: "bold",
-                fontSize: 18,
-                marginTop: 2,
-              }}
-            >
-              {fmt(totalMinutesToday)}
-            </Text>
+          <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
+            <ClockIcon size={16} color={Colors.textSecondary} />
+            <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Screen Time</Text>
+            <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{fmt(totalMinutesToday)}</Text>
           </View>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: Colors.card,
-              borderRadius: 12,
-              padding: 14,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: Colors.border,
-            }}
-          >
-            <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Aura Drained</Text>
-            <Text
-              style={{
-                color: Colors.error,
-                fontWeight: "bold",
-                fontSize: 18,
-                marginTop: 2,
-              }}
-            >
-              {Math.round(totalDrainedToday)}
-            </Text>
+          <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
+            <TrendDownIcon size={16} color={Colors.error} />
+            <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Aura Drained</Text>
+            <Text style={{ color: Colors.error, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{Math.round(totalDrainedToday)}</Text>
           </View>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: Colors.card,
-              borderRadius: 12,
-              padding: 14,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: Colors.border,
-            }}
-          >
-            <Text style={{ color: Colors.textSecondary, fontSize: 11 }}>Tracked</Text>
-            <Text
-              style={{
-                color: Colors.primary,
-                fontWeight: "bold",
-                fontSize: 18,
-                marginTop: 2,
-              }}
-            >
-              {trackedApps.length}
-            </Text>
+          <View style={{ flex: 1, backgroundColor: Colors.card, borderRadius: Radii.lg, padding: 14, alignItems: "center", ...Shadows.sm }}>
+            <GridIcon size={16} color={Colors.primary} />
+            <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 4 }}>Tracked</Text>
+            <Text style={{ color: Colors.primary, fontFamily: Fonts.heading, fontSize: 18, marginTop: 2 }}>{trackedApps.length}</Text>
           </View>
         </View>
 
@@ -591,7 +641,7 @@ export default function StudentHome() {
               gap: 10,
             }}
           >
-            <Text style={{ fontSize: 20 }}>{"\u26A0\uFE0F"}</Text>
+            <AlertTriangleIcon size={20} color={Colors.warning} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: Colors.warning, fontWeight: "bold", fontSize: 13 }}>
                 Overlay permission needed
@@ -612,7 +662,7 @@ export default function StudentHome() {
             marginTop: 20,
           }}
         >
-          <Text style={{ fontSize: 17, fontWeight: "bold", color: Colors.text }}>
+          <Text style={{ fontSize: 17, fontFamily: Fonts.heading, color: Colors.text }}>
             Tracked Apps
           </Text>
           <TouchableOpacity
@@ -621,11 +671,15 @@ export default function StudentHome() {
               backgroundColor: Colors.primary,
               paddingHorizontal: 14,
               paddingVertical: 7,
-              borderRadius: 8,
+              borderRadius: Radii.sm,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
             }}
           >
-            <Text style={{ color: Colors.text, fontSize: 13, fontWeight: "bold" }}>
-              + Add App
+            <PlusIcon size={14} color={Colors.textInverse} />
+            <Text style={{ color: Colors.textInverse, fontSize: 13, fontFamily: Fonts.heading }}>
+              Add App
             </Text>
           </TouchableOpacity>
         </View>
@@ -647,11 +701,11 @@ export default function StudentHome() {
               borderStyle: "dashed",
             }}
           >
-            <Text style={{ fontSize: 36 }}>{"\uD83D\uDCF1"}</Text>
+            <SmartphoneIcon size={36} color={Colors.textSecondary} />
             <Text
               style={{
                 color: Colors.text,
-                fontWeight: "bold",
+                fontFamily: Fonts.heading,
                 marginTop: 8,
                 fontSize: 15,
               }}
@@ -692,9 +746,9 @@ export default function StudentHome() {
               }}
             >
               {/* Icon + Info */}
-              <Text style={{ fontSize: 28, marginRight: 12 }}>
-                {app.isLocked ? "\uD83D\uDD12" : "\uD83D\uDCF1"}
-              </Text>
+              <View style={{ marginRight: 12 }}>
+                {app.isLocked ? <LockIcon size={24} color={Colors.primary} /> : <SmartphoneIcon size={24} color={Colors.text} />}
+              </View>
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
@@ -754,17 +808,19 @@ export default function StudentHome() {
               borderColor: Colors.borderLight,
             }}
           >
-            <Text
-              style={{
-                color: Colors.primary,
-                fontWeight: "bold",
-                fontSize: 13,
-                marginBottom: 4,
-              }}
-            >
-              How it works
-            </Text>
-            <Text style={{ color: Colors.textLight, fontSize: 12, lineHeight: 18 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <InfoIcon size={14} color={Colors.primary} />
+              <Text
+                style={{
+                  color: Colors.primary,
+                  fontFamily: Fonts.heading,
+                  fontSize: 13,
+                }}
+              >
+                How it works
+              </Text>
+            </View>
+            <Text style={{ color: Colors.textLight, fontFamily: Fonts.body, fontSize: 12, lineHeight: 18 }}>
               {"\u2022 Usage is tracked automatically by Android\n\u2022 Aura drains based on real screen time\n\u2022 Locked apps trigger a 3x penalty + native block overlay\n\u2022 Pull down to refresh your stats"}
             </Text>
           </View>
@@ -786,10 +842,13 @@ export default function StudentHome() {
             }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ color: Colors.text, fontWeight: "bold", fontSize: 14 }}>
-                {"\uD83D\uDEE1\uFE0F"} App Lock Service
-              </Text>
-              <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <ShieldIcon size={16} color={Colors.primary} />
+                <Text style={{ color: Colors.text, fontFamily: Fonts.heading, fontSize: 14 }}>
+                  App Lock Service
+                </Text>
+              </View>
+              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 11, marginTop: 2 }}>
                 {lockServiceRunning
                   ? "Running \u2014 locked apps will be blocked"
                   : "Stopped \u2014 tap switch to activate"}
@@ -814,6 +873,7 @@ export default function StudentHome() {
             />
           </View>
         )}
+        </Animated.View>
       </ScrollView>
 
       {/* ════════════════════════════════════════════════════════════════════
@@ -849,9 +909,7 @@ export default function StudentHome() {
                   Installed Apps
                 </Text>
                 <TouchableOpacity onPress={() => setShowAddModal(false)}>
-                  <Text style={{ color: Colors.textSecondary, fontSize: 28, lineHeight: 28 }}>
-                    x
-                  </Text>
+                  <XIcon size={22} color={Colors.textSecondary} />
                 </TouchableOpacity>
               </View>
               <Text
@@ -886,9 +944,9 @@ export default function StudentHome() {
                       borderColor: Colors.border,
                     }}
                   >
-                    <Text style={{ fontSize: 22, marginRight: 12 }}>
-                      {"\uD83D\uDCF1"}
-                    </Text>
+                    <View style={{ marginRight: 12 }}>
+                      <SmartphoneIcon size={22} color={Colors.textSecondary} />
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: Colors.text, fontSize: 14 }}>
                         {app.appName}
@@ -942,9 +1000,9 @@ export default function StudentHome() {
                 maxWidth: 360,
               }}
             >
-              <Text style={{ fontSize: 24, textAlign: "center" }}>
-                {settingsApp.isLocked ? "\uD83D\uDD12" : "\uD83D\uDCF1"}
-              </Text>
+              <View style={{ alignItems: "center" }}>
+                {settingsApp.isLocked ? <LockIcon size={32} color={Colors.primary} /> : <SmartphoneIcon size={32} color={Colors.text} />}
+              </View>
               <Text
                 style={{
                   fontSize: 20,
@@ -1039,11 +1097,12 @@ export default function StudentHome() {
                 }}
               >
                 <View>
-                  <Text style={{ color: Colors.text, fontWeight: "600" }}>
-                    {settingsApp.isLocked
-                      ? "\uD83D\uDD12 Locked"
-                      : "\uD83D\uDD13 Unlocked"}
-                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    {settingsApp.isLocked ? <LockIcon size={16} color={Colors.primary} /> : <UnlockIcon size={16} color={Colors.success} />}
+                    <Text style={{ color: Colors.text, fontFamily: Fonts.heading }}>
+                      {settingsApp.isLocked ? "Locked" : "Unlocked"}
+                    </Text>
+                  </View>
                   <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
                     {settingsApp.isLocked
                       ? "Native overlay blocks this app"
@@ -1103,11 +1162,13 @@ export default function StudentHome() {
             padding: 32,
           }}
         >
-          <Text style={{ fontSize: 56 }}>{"\uD83D\uDD12"}</Text>
+          <View style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: Radii.full, padding: 20, marginBottom: 8 }}>
+            <LockIcon size={48} color={Colors.error} />
+          </View>
           <Text
             style={{
               fontSize: 26,
-              fontWeight: "bold",
+              fontFamily: Fonts.heading,
               color: Colors.error,
               marginTop: 16,
               textAlign: "center",
@@ -1118,6 +1179,7 @@ export default function StudentHome() {
           <Text
             style={{
               fontSize: 15,
+              fontFamily: Fonts.body,
               color: Colors.textSecondary,
               textAlign: "center",
               marginTop: 10,
@@ -1135,13 +1197,14 @@ export default function StudentHome() {
             style={{
               backgroundColor: Colors.primary,
               padding: 16,
-              borderRadius: 12,
+              borderRadius: Radii.md,
               alignItems: "center",
               marginTop: 20,
               width: "100%",
+              ...Shadows.sm,
             }}
           >
-            <Text style={{ color: Colors.text, fontSize: 17, fontWeight: "bold" }}>
+            <Text style={{ color: Colors.textInverse, fontSize: 17, fontFamily: Fonts.heading }}>
               Go to Learning Hub
             </Text>
           </TouchableOpacity>
