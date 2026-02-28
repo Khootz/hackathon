@@ -11,56 +11,73 @@ import {
 import Svg, { Path, Polyline } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useAlertStore } from "../../store/alertStore";
-import { Colors, Fonts, Radii, Shadows } from "../../constants";
+import { supabase } from "../../lib/supabase";
 
-function BellIcon({ size = 22, color = Colors.textInverse }: { size?: number; color?: string }) {
+// ── Live toast for new incoming alerts ───────────────────────────────────────
+
+function NewAlertToast({
+  alert,
+  onDismiss,
+}: {
+  alert: { severity: "minor" | "critical"; app_name: string | null; message: string } | null;
+  onDismiss: () => void;
+}) {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!alert) return;
+    Animated.sequence([
+      Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(4000),
+      Animated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start(() => onDismiss());
+  }, [alert]);
+
+  if (!alert) return null;
+
+  const isCritical = alert.severity === "critical";
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M13.73 21a2 2 0 0 1-3.46 0" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
+    <Animated.View
+      style={{
+        opacity,
+        position: "absolute",
+        top: 12,
+        left: 16,
+        right: 16,
+        zIndex: 999,
+        backgroundColor: isCritical ? "#3b0014" : "#2a200a",
+        borderLeftWidth: 4,
+        borderLeftColor: isCritical ? "#FF1744" : "#FFD700",
+        borderRadius: 10,
+        padding: 14,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 8,
+      }}
+    >
+      <Text style={{ color: isCritical ? "#FF1744" : "#FFD700", fontWeight: "bold", fontSize: 13 }}>
+        {isCritical ? "🚨 New Critical Alert" : "⚠️ New Minor Alert"}
+        {alert.app_name ? ` — ${alert.app_name}` : ""}
+      </Text>
+      <Text style={{ color: "#e2e8f0", fontSize: 12, marginTop: 4 }}>{alert.message}</Text>
+    </Animated.View>
   );
 }
 
-function CheckIcon({ size = 14, color = Colors.textInverse }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Polyline points="20 6 9 17 4 12" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function AlertTriangleIcon({ size = 16, color = Colors.warning }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M12 9v4M12 17h.01" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function ZapIcon({ size = 16, color = Colors.error }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function InboxIcon({ size = 40, color = Colors.textLight }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M22 12h-6l-2 3H10l-2-3H2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function NotificationsScreen() {
   const user = useAuthStore((s) => s.user);
   const { alerts, fetchAlerts, acknowledgeAlert, loading } = useAlertStore();
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<"all" | "minor" | "critical">("all");
+  const [liveAlert, setLiveAlert] = useState<{
+    severity: "minor" | "critical";
+    app_name: string | null;
+    message: string;
+  } | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -74,6 +91,40 @@ export default function NotificationsScreen() {
       Animated.spring(slideAnim, { toValue: 0, tension: 70, friction: 14, useNativeDriver: true }),
     ]).start();
   }, [userId]);
+
+  // ── Realtime subscription ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`parent-alerts-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "security_alerts",
+          filter: `parent_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newRow = payload.new as any;
+          // Refresh the full list
+          fetchAlerts(userId);
+          // Show live toast
+          setLiveAlert({
+            severity: newRow.severity,
+            app_name: newRow.app_name,
+            message: newRow.message,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
 
   const onRefresh = useCallback(async () => {
     if (!userId) return;
@@ -122,23 +173,21 @@ export default function NotificationsScreen() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      {/* Header */}
-      <View
-        style={{
-          backgroundColor: Colors.primary,
-          paddingTop: 56,
-          paddingBottom: 32,
-          paddingHorizontal: 24,
-          overflow: "hidden",
-        }}
+    <View style={{ flex: 1, backgroundColor: "#0f0f23" }}>
+      {/* Live incoming alert toast */}
+      <NewAlertToast alert={liveAlert} onDismiss={() => setLiveAlert(null)} />
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />
+        }
       >
-        <View style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: 90, backgroundColor: "rgba(255,255,255,0.07)" }} />
-        <View style={{ position: "absolute", bottom: -60, left: -20, width: 160, height: 160, borderRadius: 80, backgroundColor: "rgba(255,255,255,0.05)" }} />
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 6 }}>
-          <BellIcon size={22} color={Colors.textInverse} />
-          <Text style={{ fontFamily: Fonts.heading, fontSize: 28, color: Colors.textInverse, letterSpacing: 0.2 }}>
-            Alerts
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View>
+          <Text style={{ fontSize: 24, fontWeight: "bold", color: "#fff" }}>
+            Alerts 🔔
           </Text>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -220,59 +269,10 @@ export default function NotificationsScreen() {
                 {filter === "all" ? "Your child's activity is looking good!" : `No ${filter} alerts at the moment`}
               </Text>
             </View>
-          ) : (
-            filteredAlerts.map((alert) => {
-              const isCritical = alert.severity === "critical";
-              const accentColor = isCritical ? Colors.error : Colors.warning;
-              const accentBg = isCritical ? Colors.errorLight : Colors.warningLight;
-              return (
-                <TouchableOpacity
-                  key={alert.id}
-                  onPress={() => { if (!alert.acknowledged) handleAcknowledge(alert.id); }}
-                  activeOpacity={alert.acknowledged ? 1 : 0.75}
-                  style={{
-                    backgroundColor: Colors.card,
-                    borderRadius: Radii.lg,
-                    padding: 16,
-                    marginBottom: 10,
-                    borderLeftWidth: 4,
-                    borderLeftColor: accentColor,
-                    opacity: alert.acknowledged ? 0.55 : 1,
-                    ...Shadows.sm,
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
-                    <View style={{ width: 32, height: 32, borderRadius: Radii.md, backgroundColor: accentBg, alignItems: "center", justifyContent: "center", marginTop: 2 }}>
-                      {isCritical ? <ZapIcon size={15} color={accentColor} /> : <AlertTriangleIcon size={15} color={accentColor} />}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                        <Text style={{ fontFamily: Fonts.heading, fontSize: 12, color: accentColor, textTransform: "uppercase", letterSpacing: 0.6 }}>
-                          {isCritical ? "Critical" : "Minor"}{alert.app_name ? `  ·  ${alert.app_name}` : ""}
-                        </Text>
-                        {!alert.acknowledged && (
-                          <View style={{ width: 8, height: 8, borderRadius: Radii.full, backgroundColor: Colors.primary }} />
-                        )}
-                      </View>
-                      <Text style={{ fontFamily: Fonts.body, fontSize: 14, color: Colors.text, marginTop: 5, lineHeight: 20 }}>
-                        {alert.message}
-                      </Text>
-                      <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
-                        <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.textLight }}>
-                          {new Date(alert.created_at).toLocaleString()}
-                        </Text>
-                        {alert.sent_whatsapp && (
-                          <Text style={{ fontFamily: Fonts.body, fontSize: 11, color: Colors.success }}>WhatsApp sent</Text>
-                        )}
-                      </View>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </Animated.View>
-      </ScrollView>
+          </TouchableOpacity>
+        ))
+      )}
+    </ScrollView>
     </View>
   );
 }
