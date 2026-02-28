@@ -8,10 +8,26 @@ import {
   Alert,
   Animated,
 } from "react-native";
-import Svg, { Path, Polyline } from "react-native-svg";
+import Svg, { Path, Polyline, Line, Circle } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useAlertStore } from "../../store/alertStore";
 import { supabase } from "../../lib/supabase";
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+const AlertOctagonIcon = ({ size = 18, color = "#FF1744" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="12" y1="8" x2="12" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="16" x2="12.01" y2="16" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const AlertTriangleIcon = ({ size = 18, color = "#FFD700" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="17" x2="12.01" y2="17" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
 
 // ── Live toast for new incoming alerts ───────────────────────────────────────
 
@@ -57,10 +73,17 @@ function NewAlertToast({
         elevation: 8,
       }}
     >
-      <Text style={{ color: isCritical ? "#FF1744" : "#FFD700", fontWeight: "bold", fontSize: 13 }}>
-        {isCritical ? "🚨 New Critical Alert" : "⚠️ New Minor Alert"}
-        {alert.app_name ? ` — ${alert.app_name}` : ""}
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        {isCritical ? (
+          <AlertOctagonIcon size={16} color="#FF1744" />
+        ) : (
+          <AlertTriangleIcon size={16} color="#FFD700" />
+        )}
+        <Text style={{ color: isCritical ? "#FF1744" : "#FFD700", fontWeight: "bold", fontSize: 13, flex: 1 }}>
+          {isCritical ? "New Critical Alert" : "New Minor Alert"}
+          {alert.app_name ? ` — ${alert.app_name}` : ""}
+        </Text>
+      </View>
       <Text style={{ color: "#e2e8f0", fontSize: 12, marginTop: 4 }}>{alert.message}</Text>
     </Animated.View>
   );
@@ -187,7 +210,7 @@ export default function NotificationsScreen() {
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <View>
           <Text style={{ fontSize: 24, fontWeight: "bold", color: "#fff" }}>
-            Alerts 🔔
+            Alerts
           </Text>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>

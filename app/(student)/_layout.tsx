@@ -1,10 +1,64 @@
 import { useEffect, useState, useCallback } from "react";
 import { Tabs } from "expo-router";
 import { View, Text, TouchableOpacity, StyleSheet, AppState, Platform } from "react-native";
+import Svg, { Path, Circle, Line, Polyline, Rect } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useFamilyStore } from "../../store/familyStore";
 import { useSuspiciousActivityStore } from "../../store/suspiciousActivityStore";
 import * as UsageStats from "../../modules/usage-stats";
+
+// ── Icons ────────────────────────────────────────────────────────────────────
+const HomeIcon = ({ size = 20, color = "#a0aec0" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Polyline points="9 22 9 12 15 12 15 22" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const BookIcon = ({ size = 20, color = "#a0aec0" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const SparklesIcon = ({ size = 20, color = "#a0aec0" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 3l1.545 4.635L18 9.18l-4.455 1.545L12 15.27l-1.545-4.545L6 9.18l4.455-1.545L12 3z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M19 16l.91 2.73 2.73.91-2.73.91L19 23l-.91-2.73-2.73-.91 2.73-.91L19 16z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const SettingsIcon = ({ size = 20, color = "#a0aec0" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth={2} />
+    <Path d="M12 1v6m0 6v10M1 12h6m6 0h10" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Path d="M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const LockIcon = ({ size = 16, color = "#fff" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke={color} strokeWidth={2} />
+    <Path d="M7 11V7a5 5 0 0 1 10 0v4" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const WindowIcon = ({ size = 16, color = "#fff" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="2" y="2" width="20" height="20" rx="2" stroke={color} strokeWidth={2} />
+    <Line x1="2" y1="8" x2="22" y2="8" stroke={color} strokeWidth={2} />
+    <Line x1="12" y1="8" x2="12" y2="22" stroke={color} strokeWidth={2} />
+  </Svg>
+);
+const AlertTriangleIcon = ({ size = 16, color = "#FF1744" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="17" x2="12.01" y2="17" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const XIcon = ({ size = 16, color = "#a0aec0" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Line x1="18" y1="6" x2="6" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="6" y1="6" x2="18" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
 
 // ── Permission Banner ─────────────────────────────────────────────────────────
 
@@ -37,9 +91,12 @@ function PermissionBanners() {
           style={[styles.permBanner, { backgroundColor: "#e94560" }]}
           onPress={() => UsageStats.requestUsageAccess()}
         >
-          <Text style={styles.permText}>
-            🔒 Tap to grant Usage Access — required for screen monitoring
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <LockIcon size={14} color="#fff" />
+            <Text style={styles.permText}>
+              Tap to grant Usage Access — required for screen monitoring
+            </Text>
+          </View>
         </TouchableOpacity>
       )}
       {usageGranted && !overlayGranted && (
@@ -47,9 +104,12 @@ function PermissionBanners() {
           style={[styles.permBanner, { backgroundColor: "#e67e22" }]}
           onPress={() => UsageStats.requestOverlayPermission()}
         >
-          <Text style={styles.permText}>
-            🪟 Tap to grant Overlay Permission — required for app lock screen
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <WindowIcon size={14} color="#fff" />
+            <Text style={styles.permText}>
+              Tap to grant Overlay Permission — required for app lock screen
+            </Text>
+          </View>
         </TouchableOpacity>
       )}
     </>
@@ -73,9 +133,12 @@ function SuspiciousAlertBanner() {
         { borderColor: isCritical ? "#FF1744" : "#FFD700" },
       ]}
     >
+      <View style={{ marginRight: 12, marginTop: 2 }}>
+        <AlertTriangleIcon size={20} color={isCritical ? "#FF1744" : "#FFD700"} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.bannerTitle, { color: isCritical ? "#FF1744" : "#FFD700" }]}>
-          {isCritical ? "🚨 Critical Alert" : "⚠️ Safety Warning"}
+          {isCritical ? "Critical Alert" : "Safety Warning"}
         </Text>
         <Text style={styles.bannerApp}>{pendingAlert.appName}</Text>
         <Text style={styles.bannerReason}>{pendingAlert.reasoning}</Text>
@@ -84,7 +147,7 @@ function SuspiciousAlertBanner() {
         )}
       </View>
       <TouchableOpacity onPress={dismiss} style={styles.bannerDismiss}>
-        <Text style={{ color: "#a0aec0", fontSize: 18, lineHeight: 20 }}>✕</Text>
+        <XIcon size={18} color="#a0aec0" />
       </TouchableOpacity>
     </View>
   );
@@ -140,28 +203,28 @@ export default function StudentLayout() {
           name="index"
           options={{
             title: "Home",
-            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏠</Text>,
+            tabBarIcon: ({ color }) => <HomeIcon size={22} color={color} />,
           }}
         />
         <Tabs.Screen
           name="learning"
           options={{
             title: "Learn",
-            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📚</Text>,
+            tabBarIcon: ({ color }) => <BookIcon size={22} color={color} />,
           }}
         />
         <Tabs.Screen
           name="dashboard"
           options={{
             title: "Aura",
-            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>✨</Text>,
+            tabBarIcon: ({ color }) => <SparklesIcon size={22} color={color} />,
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
             title: "Settings",
-            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⚙️</Text>,
+            tabBarIcon: ({ color }) => <SettingsIcon size={22} color={color} />,
           }}
         />
       </Tabs>

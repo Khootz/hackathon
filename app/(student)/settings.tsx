@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
+import Svg, { Path, Circle, Line, Polyline, Rect } from "react-native-svg";
 import { useAuthStore } from "../../store/authStore";
 import { useFamilyStore } from "../../store/familyStore";
 import {
@@ -17,29 +18,120 @@ import {
   DetectionLog,
 } from "../../store/suspiciousActivityStore";
 import { RISK_REGISTRY, DetectionConfig } from "../../constants";
+import { Colors, Fonts, Radii } from "../../constants";
 import * as UsageStats from "../../modules/usage-stats";
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+const MusicIcon = ({ size = 14 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 18V5l12-2v13" stroke="#6C63FF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Circle cx="6" cy="18" r="3" stroke="#6C63FF" strokeWidth={2} />
+    <Circle cx="18" cy="16" r="3" stroke="#6C63FF" strokeWidth={2} />
+  </Svg>
+);
+const MessageIcon = ({ size = 14 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="#6C63FF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const ShapesIcon = ({ size = 14 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="8" r="6" stroke="#6C63FF" strokeWidth={2} />
+    <Path d="M15 13l3 7-6-3-6 3 3-7" stroke="#6C63FF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const FlameIcon = ({ size = 14 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 5 0c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 2 6.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z" stroke="#FF1744" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const DiceIcon = ({ size = 14 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24\" fill=\"none\">
+    <Rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" stroke=\"#FF1744\" strokeWidth={2} />
+    <Circle cx=\"8\" cy=\"8\" r=\"1\" fill=\"#FF1744\" />
+    <Circle cx=\"16\" cy=\"8\" r=\"1\" fill=\"#FF1744\" />
+    <Circle cx=\"12\" cy=\"12\" r=\"1\" fill=\"#FF1744\" />
+    <Circle cx=\"8\" cy=\"16\" r=\"1\" fill=\"#FF1744\" />
+    <Circle cx=\"16\" cy=\"16\" r=\"1\" fill=\"#FF1744\" />
+  </Svg>
+);
+const VideoIcon = ({ size = 14 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M23 7l-7 5 7 5V7z" stroke="#FF1744" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Rect x="1" y="5" width="15" height="14" rx="2" stroke="#FF1744" strokeWidth={2} />
+  </Svg>
+);
+const GamepadIcon = ({ size = 14 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M6 12h4m-2-2v4m10-3h.01M18 11h.01" stroke="#00C853" strokeWidth={2} strokeLinecap="round" />
+    <Path d="M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z" stroke="#00C853" strokeWidth={2} strokeLinecap=\"round\" strokeLinejoin=\"round\" />
+  </Svg>
+);
+const ChromeIcon = ({ size = 14 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke="#00C853" strokeWidth={2} />
+    <Circle cx="12" cy="12" r="4" stroke="#00C853" strokeWidth={2} />
+  </Svg>
+);
+const CheckIcon = ({ size = 14, color = "#00C853" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Polyline points="20 6 9 17 4 12" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const XIcon = ({ size = 14, color = "#e94560" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Line x1="18" y1="6" x2="6" y2="18" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
+    <Line x1="6" y1="6" x2="18" y2="18" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
+  </Svg>
+);
+const AlertOctagonIcon = ({ size = 14, color = "#FF1744" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="12" y1="8" x2="12" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <Line x1="12" y1="16" x2="12.01" y2="16" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const FlaskIcon = ({ size = 14, color = "#6C63FF" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 3h6v7l4 8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2l4-8V3z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="9" y1="3" x2="15" y2="3" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+const LogOutIcon = ({ size = 16, color = "#e94560" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Polyline points="16 17 21 12 16 7" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Line x1="21" y1="12" x2="9" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+const SettingsIcon = ({ size = 16 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="3" stroke="#fff" strokeWidth={2} />
+    <Path d="M12 1v6m0 6v10M1 12h6m6 0h10M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24" stroke="#fff" strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
 
 // ── Test Presets ──────────────────────────────────────────────────────────────
 
 const TEST_PRESETS = [
-  { label: "🎵 TikTok", pkg: "com.zhiliaoapp.musically", name: "TikTok", expect: "minor" },
-  { label: "💬 Discord", pkg: "com.discord", name: "Discord", expect: "minor" },
-  { label: "👻 Snapchat", pkg: "com.snapchat.android", name: "Snapchat", expect: "minor" },
-  { label: "🔥 Tinder", pkg: "com.tinder", name: "Tinder", expect: "critical" },
-  { label: "🎰 Bet365", pkg: "com.bet365", name: "Bet365", expect: "critical" },
-  { label: "📹 Omegle", pkg: "com.omegle", name: "Omegle", expect: "critical" },
-  { label: "🎮 Roblox (safe)", pkg: "com.roblox.client", name: "Roblox", expect: "safe" },
-  { label: "📱 Chrome (safe)", pkg: "com.android.chrome", name: "Chrome", expect: "safe" },
+  { label: "TikTok", pkg: "com.zhiliaoapp.musically", name: "TikTok", expect: "minor", icon: MusicIcon },
+  { label: "Discord", pkg: "com.discord", name: "Discord", expect: "minor", icon: MessageIcon },
+  { label: "Snapchat", pkg: "com.snapchat.android", name: "Snapchat", expect: "minor", icon: ShapesIcon },
+  { label: "Tinder", pkg: "com.tinder", name: "Tinder", expect: "critical", icon: FlameIcon },
+  { label: "Bet365", pkg: "com.bet365", name: "Bet365", expect: "critical", icon: DiceIcon },
+  { label: "Omegle", pkg: "com.omegle", name: "Omegle", expect: "critical", icon: VideoIcon },
+  { label: "Roblox (safe)", pkg: "com.roblox.client", name: "Roblox", expect: "safe", icon: GamepadIcon },
+  { label: "Chrome (safe)", pkg: "com.android.chrome", name: "Chrome", expect: "safe", icon: ChromeIcon },
 ];
 
 // ── Log Entry Component ──────────────────────────────────────────────────────
 
 function LogEntry({ log }: { log: DetectionLog }) {
   const time = new Date(log.timestamp).toLocaleTimeString();
-  const isError = log.action.includes("❌") || !!log.error;
-  const isFlag = log.action.includes("🚨");
-  const isSafe = log.action.includes("✅");
-  const isSim = log.action.includes("🧪");
+  const isError = log.action.toLowerCase().includes("error") || !!log.error;
+  const isFlag = log.action.toLowerCase().includes("flagged");
+  const isSafe = log.action.toLowerCase().includes("safe") || log.action.toLowerCase().includes("passed");
+  const isSim = log.action.toLowerCase().includes("simulating");
 
   return (
     <View
@@ -49,9 +141,15 @@ function LogEntry({ log }: { log: DetectionLog }) {
         paddingVertical: 10,
       }}
     >
-      <Text style={{ fontSize: 10, color: "#4a5568", fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }) }}>
-        {time}
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        {isError && <XIcon size={12} color="#e94560" />}
+        {isFlag && <AlertOctagonIcon size={12} color="#FF1744" />}
+        {isSafe && <CheckIcon size={12} color="#00C853" />}
+        {isSim && <FlaskIcon size={12} color="#6C63FF" />}
+        <Text style={{ fontSize: 10, color: "#4a5568", fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }) }}>
+          {time}
+        </Text>
+      </View>
       {log.appName !== "-" && (
         <Text style={{ fontSize: 12, color: "#a0aec0", marginTop: 2 }}>
           {log.appName} ({log.packageName})
@@ -160,9 +258,12 @@ export default function SettingsScreen() {
       style={{ flex: 1, backgroundColor: "#0f0f23" }}
       contentContainerStyle={{ padding: 24, paddingBottom: 60 }}
     >
-      <Text style={{ fontSize: 24, fontWeight: "bold", color: "#fff" }}>
-        Settings ⚙️
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <SettingsIcon size={24} />
+        <Text style={{ fontSize: 24, fontWeight: "bold", color: "#fff" }}>
+          Settings
+        </Text>
+      </View>
 
       {/* ── Profile Card ──────────────────────────────────────────────────── */}
       <View
@@ -189,15 +290,19 @@ export default function SettingsScreen() {
         </Text>
 
         <Text style={{ color: "#a0aec0", fontSize: 14, marginTop: 16 }}>Linked Parent</Text>
-        <Text
-          style={{
-            color: parentId ? "#00C853" : "#e94560",
-            fontSize: 16,
-            fontWeight: "bold",
-          }}
-        >
-          {parentId ? "✅ Connected" : "❌ Not linked"}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+          {parentId ? (
+            <>
+              <CheckIcon size={16} color="#00C853" />
+              <Text style={{ color: "#00C853", fontSize: 16, fontWeight: "bold" }}>Connected</Text>
+            </>
+          ) : (
+            <>
+              <XIcon size={16} color="#e94560" />
+              <Text style={{ color: "#e94560", fontSize: 16, fontWeight: "bold" }}>Not linked</Text>
+            </>
+          )}
+        </View>
       </View>
 
       {/* ── Link to Parent ────────────────────────────────────────────────── */}
@@ -281,7 +386,7 @@ export default function SettingsScreen() {
         }}
       >
         <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16, marginBottom: 12 }}>
-          🛡️ Suspicious Activity Detection
+          Suspicious Activity Detection
         </Text>
 
         {/* Enable toggle */}
@@ -348,7 +453,7 @@ export default function SettingsScreen() {
             }}
           >
             <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16, marginBottom: 4 }}>
-              🧪 Test Detection Pipeline
+              Test Detection Pipeline
             </Text>
             <Text style={{ color: "#4a5568", fontSize: 12, marginBottom: 12, lineHeight: 17 }}>
               Simulates the full Tier 1 (pattern match) → Tier 2 (LLM call) pipeline without needing the actual app in foreground. OpenRouter API required for Tier 2.
@@ -358,25 +463,34 @@ export default function SettingsScreen() {
               Quick Tests:
             </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-              {TEST_PRESETS.map((p) => (
-                <TouchableOpacity
-                  key={p.pkg}
-                  disabled={simulating}
-                  onPress={() => runSimulation(p.name, p.pkg)}
-                  style={{
-                    backgroundColor: simulating ? "#1a1a2e" : "#0f0f23",
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: p.expect === "critical" ? "#e94560" : p.expect === "minor" ? "#FFD700" : "#2d3748",
-                    opacity: simulating ? 0.4 : 1,
-                  }}
-                >
-                  <Text style={{ color: "#fff", fontSize: 12 }}>{p.label}</Text>
-                  <Text style={{ color: "#4a5568", fontSize: 9 }}>({p.expect})</Text>
-                </TouchableOpacity>
-              ))}
+              {TEST_PRESETS.map((p) => {
+                const IconComponent = p.icon;
+                return (
+                  <TouchableOpacity
+                    key={p.pkg}
+                    disabled={simulating}
+                    onPress={() => runSimulation(p.name, p.pkg)}
+                    style={{
+                      backgroundColor: simulating ? "#1a1a2e" : "#0f0f23",
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: p.expect === "critical" ? "#e94560" : p.expect === "minor" ? "#FFD700" : "#2d3748",
+                      opacity: simulating ? 0.4 : 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <IconComponent size={14} />
+                    <View>
+                      <Text style={{ color: "#fff", fontSize: 12 }}>{p.label}</Text>
+                      <Text style={{ color: "#4a5568", fontSize: 9 }}>({p.expect})</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             {simulating && (
@@ -448,7 +562,7 @@ export default function SettingsScreen() {
               }}
             >
               <Text style={{ color: "#6C63FF", fontSize: 13, fontWeight: "600" }}>
-                📱 Check Current Foreground App
+                Check Current Foreground App
               </Text>
             </TouchableOpacity>
           </View>
@@ -466,7 +580,7 @@ export default function SettingsScreen() {
               }}
             >
               <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 14 }}>
-                🔔 Active Alert Preview
+                Active Alert Preview
               </Text>
               <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700", marginTop: 4 }}>
                 {pendingAlert.appName}
@@ -517,7 +631,7 @@ export default function SettingsScreen() {
           >
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-                📋 Detection Log ({detectionLogs.length})
+                Detection Log ({detectionLogs.length})
               </Text>
               {detectionLogs.length > 0 && (
                 <TouchableOpacity onPress={clearLogs}>
@@ -547,7 +661,7 @@ export default function SettingsScreen() {
             }}
           >
             <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16, marginBottom: 8 }}>
-              📖 Risk Registry ({RISK_REGISTRY.length} entries)
+              Risk Registry ({RISK_REGISTRY.length} entries)
             </Text>
             {RISK_REGISTRY.map((entry, i) => (
               <View
